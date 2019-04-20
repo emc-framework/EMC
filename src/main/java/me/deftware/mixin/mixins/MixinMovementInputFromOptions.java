@@ -1,13 +1,14 @@
 package me.deftware.mixin.mixins;
 
-import me.deftware.client.framework.event.events.EventSlowdown;
-import net.minecraft.client.Minecraft;
-import net.minecraft.util.MovementInputFromOptions;
+import static org.spongepowered.asm.lib.Opcodes.GETFIELD;
+
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.injection.At;
 import org.spongepowered.asm.mixin.injection.Redirect;
 
-import static org.spongepowered.asm.lib.Opcodes.GETFIELD;
+import me.deftware.client.framework.event.events.EventSlowdown;
+import net.minecraft.client.Minecraft;
+import net.minecraft.util.MovementInputFromOptions;
 
 @Mixin(MovementInputFromOptions.class)
 public class MixinMovementInputFromOptions {
@@ -18,7 +19,7 @@ public class MixinMovementInputFromOptions {
 		if (event.isCanceled()) {
 			return false;
 		}
-		return Minecraft.getInstance().gameSettings.keyBindSneak.isKeyDown();
+		return Minecraft.getMinecraft().gameSettings.keyBindSneak.isKeyDown();
 	}
 
 }

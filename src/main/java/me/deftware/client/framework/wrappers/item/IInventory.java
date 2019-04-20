@@ -14,23 +14,23 @@ public class IInventory {
 	private static IEntity entity;
 
 	public static int getFirstEmptyStack() {
-		return Minecraft.getInstance().player.inventory.getFirstEmptyStack();
+		return Minecraft.getMinecraft().player.inventory.getFirstEmptyStack();
 	}
 
 	public static int getCurrentItem() {
-		return Minecraft.getInstance().player.inventory.currentItem;
+		return Minecraft.getMinecraft().player.inventory.currentItem;
 	}
 
 	public static void setCurrentItem(int id) {
-		Minecraft.getInstance().player.inventory.currentItem = id;
+		Minecraft.getMinecraft().player.inventory.currentItem = id;
 	}
 
 	public static int getItemInUseCount() {
-		return ((IMixinEntityLivingBase) Minecraft.getInstance().player).getActiveItemStackUseCount();
+		return ((IMixinEntityLivingBase) Minecraft.getMinecraft().player).getActiveItemStackUseCount();
 	}
 
 	public static void swapHands() {
-		Minecraft.getInstance().player.connection.sendPacket(new CPacketPlayerDigging(
+		Minecraft.getMinecraft().player.connection.sendPacket(new CPacketPlayerDigging(
 				CPacketPlayerDigging.Action.SWAP_HELD_ITEMS, BlockPos.ORIGIN, EnumFacing.DOWN));
 	}
 
@@ -40,7 +40,7 @@ public class IInventory {
 
 	public static void onRender() {
 		if (IInventory.entity != null) {
-			Minecraft.getInstance().displayGuiScreen(new GuiInventory((EntityOtherPlayerMP) IInventory.entity.getEntity()));
+			Minecraft.getMinecraft().displayGuiScreen(new GuiInventory((EntityOtherPlayerMP) IInventory.entity.getEntity()));
 			IInventory.entity = null;
 		}
 	}

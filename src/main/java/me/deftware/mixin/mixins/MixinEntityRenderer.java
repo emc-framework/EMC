@@ -1,16 +1,7 @@
 package me.deftware.mixin.mixins;
 
-import me.deftware.client.framework.event.events.EventHurtcam;
-import me.deftware.client.framework.event.events.EventRender2D;
-import me.deftware.client.framework.event.events.EventRender3D;
-import me.deftware.client.framework.event.events.EventWeather;
-import me.deftware.client.framework.maps.SettingsMap;
-import me.deftware.client.framework.utils.ChatProcessor;
-import me.deftware.client.framework.wrappers.IResourceLocation;
-import me.deftware.mixin.imp.IMixinEntityRenderer;
-import net.minecraft.client.renderer.GameRenderer;
-import net.minecraft.client.renderer.GlStateManager;
-import net.minecraft.util.ResourceLocation;
+import static org.spongepowered.asm.lib.Opcodes.GETFIELD;
+
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.Shadow;
 import org.spongepowered.asm.mixin.injection.At;
@@ -18,18 +9,21 @@ import org.spongepowered.asm.mixin.injection.Inject;
 import org.spongepowered.asm.mixin.injection.Redirect;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 
-import static org.spongepowered.asm.lib.Opcodes.GETFIELD;
+import me.deftware.client.framework.event.events.EventHurtcam;
+import me.deftware.client.framework.event.events.EventRender2D;
+import me.deftware.client.framework.event.events.EventRender3D;
+import me.deftware.client.framework.event.events.EventWeather;
+import me.deftware.client.framework.maps.SettingsMap;
+import net.minecraft.client.renderer.EntityRenderer;
+import net.minecraft.client.renderer.GlStateManager;
 
-@Mixin(GameRenderer.class)
-public abstract class MixinEntityRenderer implements IMixinEntityRenderer {
+@Mixin(EntityRenderer.class)
+public class MixinEntityRenderer {
 
 	// TODO: Override RayTraceResult, line 462, FIELD: flag
 
 	@Shadow
 	private boolean renderHand;
-
-	@Shadow
-	public abstract void loadShader(ResourceLocation p_loadShader_1_);
 
 	private float partialTicks = 0;
 
@@ -43,7 +37,6 @@ public abstract class MixinEntityRenderer implements IMixinEntityRenderer {
 
 	@Inject(method = "updateCameraAndRender", at = @At(value = "INVOKE", target = "net/minecraft/client/gui/GuiIngame.renderGameOverlay(F)V"))
 	private void onRender2D(CallbackInfo cb) {
-		ChatProcessor.sendMessages();
 		new EventRender2D(0f).send();
 	}
 
@@ -63,27 +56,22 @@ public abstract class MixinEntityRenderer implements IMixinEntityRenderer {
 		}
 	}
 
-	@Inject(method = "renderWorld", at = @At(value = "INVOKE", target = "net/minecraft/client/renderer/GlStateManager.enableDepthTest()V"))
+	@Inject(method = "renderWorld", at = @At(value = "INVOKE", target = "net/minecraft/client/renderer/GlStateManager.enableAlpha()V"))
 	private void renderWorld(CallbackInfo ci) {
 		if (!((boolean) SettingsMap.getValue(SettingsMap.MapKeys.RENDER, "WORLD_DEPTH", true))) {
-			GlStateManager.disableDepthTest();
+			GlStateManager.disableDepth();
 		}
 	}
 
-	@Inject(method = "updateCameraAndRender(FJ)V", at = @At("HEAD"))
-	private void updateCameraAndRender(float partialTicks, long finishTimeNano, CallbackInfo ci) {
+	@Inject(method = "renderWorldPass", at = @At("HEAD"))
+	private void renderWorldPass(int pass, float partialTicks, long finishTimeNano, CallbackInfo ci) {
 		this.partialTicks = partialTicks;
 	}
 
-	@Redirect(method = "updateCameraAndRender(FJ)V", at = @At(value = "FIELD", target = "Lnet/minecraft/client/renderer/GameRenderer;renderHand:Z", opcode = GETFIELD))
-	private boolean updateCameraAndRender_renderHand(GameRenderer self) {
+	@Redirect(method = "renderWorldPass", at = @At(value = "FIELD", target = "Lnet/minecraft/client/renderer/EntityRenderer;renderHand:Z", opcode = GETFIELD))
+	private boolean renderWorldPass_renderHand(EntityRenderer self) {
 		new EventRender3D(partialTicks).send();
 		return renderHand;
-	}
-
-	@Override
-	public void loadCustomShader(IResourceLocation location) {
-		loadShader(location);
 	}
 
 }

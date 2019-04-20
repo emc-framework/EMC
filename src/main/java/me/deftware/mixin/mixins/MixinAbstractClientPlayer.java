@@ -2,7 +2,6 @@ package me.deftware.mixin.mixins;
 
 import me.deftware.client.framework.event.events.EventFovModifier;
 import me.deftware.client.framework.event.events.EventSpectator;
-import me.deftware.mixin.imp.IMixinAbstractClientPlayer;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.entity.AbstractClientPlayer;
 import net.minecraft.client.network.NetworkPlayerInfo;
@@ -13,13 +12,9 @@ import net.minecraft.init.Items;
 import net.minecraft.world.GameType;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.Overwrite;
-import org.spongepowered.asm.mixin.Shadow;
 
 @Mixin(AbstractClientPlayer.class)
-public abstract class MixinAbstractClientPlayer implements IMixinAbstractClientPlayer {
-
-	@Shadow
-	private NetworkPlayerInfo playerInfo;
+public abstract class MixinAbstractClientPlayer {
 
 	/**
 	 * @Author Deftware
@@ -27,7 +22,7 @@ public abstract class MixinAbstractClientPlayer implements IMixinAbstractClientP
 	 */
 	@Overwrite
 	public boolean isSpectator() {
-		NetworkPlayerInfo networkplayerinfo = Minecraft.getInstance().getConnection()
+		NetworkPlayerInfo networkplayerinfo = Minecraft.getMinecraft().getConnection()
 				.getPlayerInfo(((EntityPlayer) (Object) this).getGameProfile().getId());
 		EventSpectator event = new EventSpectator(
 				networkplayerinfo != null && networkplayerinfo.getGameType() == GameType.SPECTATOR).send();
@@ -42,17 +37,17 @@ public abstract class MixinAbstractClientPlayer implements IMixinAbstractClientP
 	public float getFovModifier() {
 		float f = 1.0F;
 
-		if (((AbstractClientPlayer) (Object) this).abilities.isFlying) {
+		if (((AbstractClientPlayer) (Object) this).capabilities.isFlying) {
 			f *= 1.1F;
 		}
 
 		EventFovModifier event = new EventFovModifier(f).send();
 		f = event.getFov();
 
-		IAttributeInstance iattributeinstance = ((AbstractClientPlayer) (Object) this).getAttribute(SharedMonsterAttributes.MOVEMENT_SPEED);
-		f = (float) ((double) f * ((iattributeinstance.getValue() / (double) ((AbstractClientPlayer) (Object) this).abilities.getWalkSpeed() + 1.0D) / 2.0D));
+		IAttributeInstance iattributeinstance = ((AbstractClientPlayer) (Object) this).getEntityAttribute(SharedMonsterAttributes.MOVEMENT_SPEED);
+		f = (float) ((double) f * ((iattributeinstance.getAttributeValue() / (double) ((AbstractClientPlayer) (Object) this).capabilities.getWalkSpeed() + 1.0D) / 2.0D));
 
-		if (((AbstractClientPlayer) (Object) this).abilities.getWalkSpeed() == 0.0F || Float.isNaN(f) || Float.isInfinite(f)) {
+		if (((AbstractClientPlayer) (Object) this).capabilities.getWalkSpeed() == 0.0F || Float.isNaN(f) || Float.isInfinite(f)) {
 			f = 1.0F;
 		}
 
@@ -70,11 +65,6 @@ public abstract class MixinAbstractClientPlayer implements IMixinAbstractClientP
 		}
 
 		return f;
-	}
-
-	@Override
-	public NetworkPlayerInfo getPlayerNetworkInfo() {
-		return playerInfo;
 	}
 
 }

@@ -6,10 +6,6 @@ import net.minecraft.network.Packet;
 import net.minecraft.network.play.client.CPacketCloseWindow;
 import net.minecraft.network.play.client.CPacketPlayer;
 
-/**
- * Triggered when packet is being sent to the server
- */
-
 public class EventPacketSend extends Event {
 
 	private Packet<?> packet;

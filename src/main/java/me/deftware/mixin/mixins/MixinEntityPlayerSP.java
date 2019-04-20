@@ -1,10 +1,23 @@
 package me.deftware.mixin.mixins;
 
-import me.deftware.client.framework.command.CommandRegister;
-import me.deftware.client.framework.event.events.*;
+import org.spongepowered.asm.mixin.Final;
+import org.spongepowered.asm.mixin.Mixin;
+import org.spongepowered.asm.mixin.Overwrite;
+import org.spongepowered.asm.mixin.Shadow;
+import org.spongepowered.asm.mixin.injection.At;
+import org.spongepowered.asm.mixin.injection.Inject;
+import org.spongepowered.asm.mixin.injection.Redirect;
+import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
+
+import me.deftware.client.framework.event.events.EventChatSend;
+import me.deftware.client.framework.event.events.EventClientCommand;
+import me.deftware.client.framework.event.events.EventIRCMessage;
+import me.deftware.client.framework.event.events.EventPlayerWalking;
+import me.deftware.client.framework.event.events.EventSlowdown;
+import me.deftware.client.framework.event.events.EventUpdate;
+import me.deftware.client.framework.main.Bootstrap;
 import me.deftware.client.framework.utils.ChatColor;
 import me.deftware.client.framework.utils.ChatProcessor;
-import me.deftware.client.framework.wrappers.IChat;
 import me.deftware.mixin.imp.IMixinEntityPlayerSP;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.entity.EntityPlayerSP;
@@ -16,14 +29,6 @@ import net.minecraft.network.play.client.CPacketEntityAction;
 import net.minecraft.network.play.client.CPacketPlayer;
 import net.minecraft.util.FoodStats;
 import net.minecraft.util.math.AxisAlignedBB;
-import org.spongepowered.asm.mixin.Final;
-import org.spongepowered.asm.mixin.Mixin;
-import org.spongepowered.asm.mixin.Overwrite;
-import org.spongepowered.asm.mixin.Shadow;
-import org.spongepowered.asm.mixin.injection.At;
-import org.spongepowered.asm.mixin.injection.Inject;
-import org.spongepowered.asm.mixin.injection.Redirect;
-import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 
 @Mixin(EntityPlayerSP.class)
 public abstract class MixinEntityPlayerSP extends MixinEntity implements IMixinEntityPlayerSP {
@@ -71,7 +76,7 @@ public abstract class MixinEntityPlayerSP extends MixinEntity implements IMixinE
 	@Final
 	public NetHandlerPlayClient connection;
 
-	@Redirect(method = "livingTick", at = @At(value = "INVOKE", target = "net/minecraft/client/entity/EntityPlayerSP.isHandActive()Z", ordinal = 0))
+	@Redirect(method = "onLivingUpdate", at = @At(value = "INVOKE", target = "net/minecraft/client/entity/EntityPlayerSP.isHandActive()Z", ordinal = 0))
 	private boolean itemUseSlowdownEvent(EntityPlayerSP self) {
 		EventSlowdown event = new EventSlowdown(EventSlowdown.SlowdownType.Item_Use).send();
 		if (event.isCanceled()) {
@@ -80,7 +85,7 @@ public abstract class MixinEntityPlayerSP extends MixinEntity implements IMixinE
 		return isHandActive();
 	}
 
-	@Redirect(method = "livingTick", at = @At(value = "INVOKE", target = "net/minecraft/util/FoodStats.getFoodLevel()I"))
+	@Redirect(method = "onLivingUpdate", at = @At(value = "INVOKE", target = "net/minecraft/util/FoodStats.getFoodLevel()I"))
 	private int hungerSlowdownEvent(FoodStats self) {
 		EventSlowdown event = new EventSlowdown(EventSlowdown.SlowdownType.Hunger).send();
 		if (event.isCanceled()) {
@@ -89,7 +94,7 @@ public abstract class MixinEntityPlayerSP extends MixinEntity implements IMixinE
 		return self.getFoodLevel();
 	}
 
-	@Redirect(method = "livingTick", at = @At(value = "INVOKE", target = "net/minecraft/entity/EntityLivingBase.isPotionActive(Lnet/minecraft/potion/Potion;)Z"))
+	@Redirect(method = "onLivingUpdate", at = @At(value = "INVOKE", target = "net/minecraft/entity/EntityLivingBase.isPotionActive(Lnet/minecraft/potion/Potion;)Z"))
 	private boolean blindlessSlowdownEvent(EntityLivingBase self) {
 		EventSlowdown event = new EventSlowdown(EventSlowdown.SlowdownType.Blindness).send();
 		if (event.isCanceled()) {
@@ -98,55 +103,51 @@ public abstract class MixinEntityPlayerSP extends MixinEntity implements IMixinE
 		return self.isPotionActive(MobEffects.BLINDNESS);
 	}
 
-	@Inject(method = "tick", at = @At("HEAD"), cancellable = true)
-	private void tick(CallbackInfo ci) {
+	@Inject(method = "onUpdate", at = @At("HEAD"), cancellable = true)
+	private void onUpdate(CallbackInfo ci) {
 		EventUpdate event = new EventUpdate(posX, posY, posZ, rotationYaw, rotationPitch, onGround).send();
 		if (event.isCanceled()) {
 			ci.cancel();
 		}
 	}
 
-	@Inject(method = "sendChatMessage", at = @At("HEAD"), cancellable = true)
-	public void sendChatMessage(String message, CallbackInfo ci) {
-		String trigger = CommandRegister.getCommandTrigger();
-		if (message.startsWith(trigger) && !trigger.equals("")) {
-			try {
-				if (message.startsWith(trigger + "say")) {
-					if (!message.contains(" ")) {
-						ChatProcessor.printClientMessage(
-								"Invalid syntax, please use: " + ChatColor.AQUA + trigger + "say <Message>");
-						return;
-					}
-					connection.sendPacket(new CPacketChatMessage(message.substring((trigger + "say ").length())));
-					ci.cancel();
+	/**
+	 * @Author Deftware
+	 * @reason
+	 */
+	@Overwrite
+	public void sendChatMessage(String message) {
+		String trigger = Bootstrap.isTrigger(message);
+		if (!trigger.equals("")) {
+			if (message.startsWith(trigger + "say")) {
+				if (!message.contains(" ")) {
+					ChatProcessor.printClientMessage(
+							"Invalid syntax, please use: " + ChatColor.AQUA + trigger + "say <Message>");
 					return;
 				}
-				CommandRegister.getDispatcher().execute(message.substring(CommandRegister.getCommandTrigger().length()), Minecraft.getInstance().player.getCommandSource());
-			} catch (Exception ex) {
-				ex.printStackTrace();
-				IChat.sendClientMessage(ex.getMessage());
+				connection.sendPacket(new CPacketChatMessage(message.substring((trigger + "say ").length())));
+				return;
 			}
-			ci.cancel();
+			new EventClientCommand(message, trigger).send();
+			return;
 		} else if (message.startsWith("#")) {
-			message = message.startsWith("# ") ? message.substring(2) : message.substring(1);
+			if (message.startsWith("# ")) {
+				message = message.substring(2);
+			} else {
+				message = message.substring(1);
+			}
 			if (message.equals("")) {
 				ChatProcessor.printClientMessage("Invalid syntax, please use: " + ChatColor.AQUA + "# <Message>");
-				ci.cancel();
 				return;
 			}
 			new EventIRCMessage(message).send();
-			ci.cancel();
 			return;
 		}
 		EventChatSend event = new EventChatSend(message).send();
-		if (event.isCanceled()) {
-			ci.cancel();
-		} else if (!event.getMessage().equals(message)) {
+		if (!event.isCanceled()) {
 			connection.sendPacket(new CPacketChatMessage(event.getMessage()));
-			ci.cancel();
 		}
 	}
-
 
 	@Override
 	public void setHorseJumpPower(float height) {
@@ -193,7 +194,7 @@ public abstract class MixinEntityPlayerSP extends MixinEntity implements IMixinE
 		}
 
 		if (isCurrentViewEntity()) {
-			AxisAlignedBB axisalignedbb = getBoundingBox();
+			AxisAlignedBB axisalignedbb = getEntityBoundingBox();
 			double d0 = posX - lastReportedPosX;
 			double d1 = event.getPosY() - lastReportedPosY;
 			double d2 = posZ - lastReportedPosZ;
@@ -203,7 +204,7 @@ public abstract class MixinEntityPlayerSP extends MixinEntity implements IMixinE
 			boolean flag2 = d0 * d0 + d1 * d1 + d2 * d2 > 9.0E-4D || positionUpdateTicks >= 20;
 			boolean flag3 = d3 != 0.0D || d4 != 0.0D;
 
-			if (isPassenger()) {
+			if (isRiding()) {
 				connection.sendPacket(new CPacketPlayer.PositionRotation(motionX, -999.0D, motionZ,
 						event.getRotationYaw(), event.getRotationPitch(), event.isOnGround()));
 				flag2 = false;
@@ -232,7 +233,7 @@ public abstract class MixinEntityPlayerSP extends MixinEntity implements IMixinE
 			}
 
 			prevOnGround = onGround;
-			autoJumpEnabled = Minecraft.getInstance().gameSettings.autoJump;
+			autoJumpEnabled = Minecraft.getMinecraft().gameSettings.autoJump;
 		}
 	}
 

@@ -1,20 +1,18 @@
 package me.deftware.client.framework.wrappers.item;
 
 import me.deftware.mixin.imp.IMixinItemTool;
-import net.minecraft.block.BlockShulkerBox;
 import net.minecraft.init.Items;
+import net.minecraft.init.MobEffects;
 import net.minecraft.item.*;
-import net.minecraft.util.ResourceLocation;
-import net.minecraft.util.registry.IRegistry;
-
-import javax.annotation.Nullable;
+import net.minecraft.potion.Potion;
+import net.minecraft.potion.PotionUtils;
 
 public class IItem {
 
 	private Item item;
 
 	public IItem(String name) {
-		item = getByName(name);
+		item = Item.getByNameOrId(name);
 	}
 
 	public IItem(Item item) {
@@ -26,15 +24,7 @@ public class IItem {
 	}
 
 	public String getName() {
-		return item.getName().getUnformattedComponentText();
-	}
-
-	public String getTranslationKey() {
-		return item.getTranslationKey();
-	}
-
-	public String getItemKey() {
-		return getTranslationKey().substring("item.minecraft.".length());
+		return item.getItemStackDisplayName(new ItemStack(item));
 	}
 
 	public int getID() {
@@ -46,11 +36,11 @@ public class IItem {
 	}
 
 	public float getAttackDamage() {
-		return ((ItemSword) item).getAttackDamage() + 3.0F;
+		return ((ItemSword) item).getDamageVsEntity() + 3.0F;
 	}
 
 	public float getDamageVsEntity() {
-		return ((IMixinItemTool) item).getAttackDamage();
+		return ((IMixinItemTool) item).getDamageVsEntity();
 	}
 
 	public boolean isThrowable() {
@@ -79,27 +69,16 @@ public class IItem {
 			return item instanceof ItemNameTag;
 		} else if (type.equals(IItemType.ItemBlock)) {
 			return item instanceof ItemBlock;
-		} else if (type.equals(IItemType.ItemSoup)) {
+		} else if (type.equals(type.ItemSoup)) {
 			return item instanceof ItemSoup;
 		} else if (type.equals(IItemType.ItemHoe)) {
 			return item instanceof ItemHoe;
-		} else if (type.equals(IItemType.ItemShulkerBox)) {
-			return item instanceof ItemBlock && ((ItemBlock) item).getTranslationKey().contains("shulker_box");
 		}
 		return false;
 	}
 
 	public enum IItemType {
-		ItemPotion, ItemFishingRod, ItemFood, ItemSword, ItemTool, ItemNameTag, ItemBlock, ItemHoe, SplashPotion,
-		ItemSoup, ItemShulkerBox
-	}
-
-	protected static Item getByName(String id) {
-		ResourceLocation resourceLocation = new ResourceLocation(id);
-		if (IRegistry.ITEM.containsKey(resourceLocation)) {
-			return IRegistry.ITEM.get(resourceLocation);
-		}
-		return null;
+		ItemPotion, ItemFishingRod, ItemFood, ItemSword, ItemTool, ItemNameTag, ItemBlock, ItemHoe, SplashPotion, ItemSoup
 	}
 
 }

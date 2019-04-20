@@ -6,9 +6,13 @@ import net.minecraft.client.renderer.vertex.VertexFormat;
 public class IDefaultVertexFormats {
 
 	public static IVertexFormat get(Types type) {
-		return type.equals(Types.POSITION_COLOR) ?
-				new IVertexFormat(DefaultVertexFormats.POSITION_COLOR) :
-				new IVertexFormat(DefaultVertexFormats.POSITION_TEX_COLOR);
+		IVertexFormat format = null;
+		if (type.equals(Types.POSITION_COLOR)) {
+			format = new IVertexFormat(DefaultVertexFormats.POSITION_COLOR);
+		} else if (type.equals(Types.POSITION_TEX_COLOR)) {
+			format = new IVertexFormat(DefaultVertexFormats.POSITION_TEX_COLOR);
+		}
+		return format;
 	}
 
 	public static class IVertexFormat {

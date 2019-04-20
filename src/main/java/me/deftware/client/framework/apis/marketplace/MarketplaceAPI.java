@@ -16,31 +16,22 @@ import java.util.List;
  */
 public class MarketplaceAPI {
 
-	private static final String APIDomain = "https://emc-api.aristois.net";
+	private static final String APIDomain = "https://emc-api.sky-net.me";
 	private static CookieManager cookies;
 	private static boolean initialized = false;
 
-	/**
-	 * Initializes Marketplace API or does nothing if already initialized
-	 * Prints out status to the System.out
-	 */
 	public static void init(LoginCallback callback) {
 		if (MarketplaceAPI.initialized) {
 			return;
 		}
 		MarketplaceAPI.login((status) -> {
-			/*
-			System.err.println(
+			System.out.println(
 					status ? "EMC API initialized" : "EMC API initialization failed, could not get oAuth token");
-					*/
 			MarketplaceAPI.initialized = true;
 			callback.cb(status);
 		});
 	}
 
-	/**
-	 * Handles login response
-	 */
 	private static void login(LoginCallback callback) {
 		OAuth.oAuth((boolean success, String token, String time) -> {
 			if (success) {
@@ -65,12 +56,12 @@ public class MarketplaceAPI {
 	/**
 	 * Checks if the product is licensed
 	 *
-	 * @param modName the mod's name
+	 * @param clientInfo the mod's info
 	 * @return {@link MarketplaceResponse} with licensed status in
 	 * {@link MarketplaceResponse#success}
 	 */
-	public static MarketplaceResponse checkLicensed(String modName) {
-		return MarketplaceAPI.parseResponse(MarketplaceAPI.getSafe(MarketplaceAPI.getCheckLicensedURL(modName)));
+	public static MarketplaceResponse checkLicensed(EMCMod.EMCModInfo clientInfo) {
+		return MarketplaceAPI.parseResponse(MarketplaceAPI.getSafe(MarketplaceAPI.getCheckLicensedURL(clientInfo.getClientName())));
 	}
 
 	/**
@@ -80,26 +71,26 @@ public class MarketplaceAPI {
 	 * To protect against response forging and emulation, verify that the decrypted
 	 * response matches the supplied secret
 	 *
-	 * @param modName the mod's name
+	 * @param clientInfo the mod's info
 	 * @param secret     a unique string (e.g. timestamp) that will be returned in the
 	 *                   encrypted message
 	 * @return {@link MarketplaceResponse} with licensed status in
 	 * {@link MarketplaceResponse#success} and the encrypted {@code secret}
 	 * in {@link MarketplaceResponse#data}
 	 */
-	public static MarketplaceResponse checkLicensedSecure(String modName, String secret) {
-		return MarketplaceAPI.parseResponse(MarketplaceAPI.getSafe(MarketplaceAPI.getCheckLicensedURL(modName, secret)));
+	public static MarketplaceResponse checkLicensedSecure(EMCMod.EMCModInfo clientInfo, String secret) {
+		return MarketplaceAPI.parseResponse(MarketplaceAPI.getSafe(MarketplaceAPI.getCheckLicensedURL(clientInfo.getClientName(), secret)));
 	}
 
 	/**
 	 * Retrieves a product key if licensed
 	 *
-	 * @param modName the mod's name
+	 * @param clientInfo the mod's info
 	 * @return {@link MarketplaceResponse} with the key in
 	 * {@link MarketplaceResponse#data}
 	 */
-	public static MarketplaceResponse getKey(String modName) {
-		return MarketplaceAPI.parseResponse(MarketplaceAPI.getSafe(MarketplaceAPI.getKeyURL(modName)));
+	public static MarketplaceResponse getKey(EMCMod.EMCModInfo clientInfo) {
+		return MarketplaceAPI.parseResponse(MarketplaceAPI.getSafe(MarketplaceAPI.getKeyURL(clientInfo.getClientName())));
 	}
 
 	/**

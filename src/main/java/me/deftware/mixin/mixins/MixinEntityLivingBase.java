@@ -1,7 +1,7 @@
 package me.deftware.mixin.mixins;
 
 import me.deftware.client.framework.event.events.EventIsPotionActive;
-import me.deftware.client.framework.maps.SettingsMap;
+import me.deftware.client.framework.event.events.EventJumpHeight;
 import me.deftware.mixin.imp.IMixinEntityLivingBase;
 import net.minecraft.client.entity.EntityPlayerSP;
 import net.minecraft.entity.EntityLivingBase;
@@ -44,12 +44,12 @@ public class MixinEntityLivingBase implements IMixinEntityLivingBase {
 	 */
 	@Overwrite
 	protected float getJumpUpwardsMotion() {
-		return (float) SettingsMap.getValue(SettingsMap.MapKeys.ENTITY_SETTINGS, "JUMP_HEIGHT", 0.42F);
+		EventJumpHeight event = new EventJumpHeight(0.42F).send();
+		return event.getHeight();
 	}
 
 	@Override
 	public int getActiveItemStackUseCount() {
 		return activeItemStackUseCount;
 	}
-
 }

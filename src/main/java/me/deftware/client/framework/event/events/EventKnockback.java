@@ -2,9 +2,6 @@ package me.deftware.client.framework.event.events;
 
 import me.deftware.client.framework.event.Event;
 
-/**
- * Triggered by the server to update entity motion clientside
- */
 public class EventKnockback extends Event {
 
 	private double x, y, z;

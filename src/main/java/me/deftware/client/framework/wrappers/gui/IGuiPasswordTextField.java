@@ -7,6 +7,7 @@ import net.minecraft.client.renderer.GlStateManager;
 import net.minecraft.client.renderer.Tessellator;
 import net.minecraft.client.renderer.vertex.DefaultVertexFormats;
 
+
 public class IGuiPasswordTextField extends IGuiTextField {
 
 	private int enabledColor = 14737632;
@@ -17,7 +18,7 @@ public class IGuiPasswordTextField extends IGuiTextField {
 	}
 
 	@Override
-	public void drawTextField(int p_195608_1_, int p_195608_2_, float p_195608_3_) {
+	public void drawTextBox() {
 		if (getVisible()) {
 			if (getEnableBackgroundDrawing()) {
 				Gui.drawRect(x - 1, y - 1, x + getWidth() + 1,
@@ -95,10 +96,10 @@ public class IGuiPasswordTextField extends IGuiTextField {
 
 		Tessellator tessellator = Tessellator.getInstance();
 		BufferBuilder bufferbuilder = tessellator.getBuffer();
-		GlStateManager.color4f(0.0F, 0.0F, 255.0F, 255.0F);
+		GlStateManager.color(0.0F, 0.0F, 255.0F, 255.0F);
 		GlStateManager.disableTexture2D();
 		GlStateManager.enableColorLogic();
-		GlStateManager.logicOp(GlStateManager.LogicOp.OR_REVERSE);
+		GlStateManager.colorLogicOp(GlStateManager.LogicOp.OR_REVERSE);
 		bufferbuilder.begin(7, DefaultVertexFormats.POSITION);
 		bufferbuilder.pos((double) startX, (double) endY, 0.0D).endVertex();
 		bufferbuilder.pos((double) endX, (double) endY, 0.0D).endVertex();

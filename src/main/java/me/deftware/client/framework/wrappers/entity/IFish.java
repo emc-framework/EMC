@@ -6,7 +6,7 @@ import net.minecraft.entity.projectile.EntityFishHook;
 public class IFish {
 
 	private static EntityFishHook getEntity() {
-		return Minecraft.getInstance().player.fishEntity;
+		return Minecraft.getMinecraft().player.fishEntity;
 	}
 
 	public static boolean isNull() {

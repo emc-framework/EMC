@@ -1,57 +1,63 @@
 buildscript {
     repositories {
-        maven { url = 'http://repo.spongepowered.org/maven' }
-        maven { url = 'https://plugins.gradle.org/m2/' }
-        maven { url 'https://www.jitpack.io' }
-        maven { url 'https://files.minecraftforge.net/maven' }
+        maven {
+            name = 'forge'
+            url = 'http://files.minecraftforge.net/maven'
+        }
+        maven {
+            name = 'SpongePowered'
+            url = 'http://repo.spongepowered.org/maven'
+        }
+        maven {
+            url = "https://plugins.gradle.org/m2/"
+        }
     }
 
     dependencies {
-        classpath 'com.github.Chocohead:ForgeGradle:moderniser-SNAPSHOT'
+        classpath "net.minecraftforge.gradle:ForgeGradle:${project.forgeGradleVersion}"
         classpath "org.spongepowered:mixingradle:${project.mixinGradleVersion}"
         classpath "com.github.jengelman.gradle.plugins:shadow:2.0.0"
     }
 }
 
-def getVersionFromJava() {
-    def ver = 0.0, patch = 0
-    def versionClass = file("src/main/java/me/deftware/client/framework/FrameworkConstants.java").text
-    (versionClass =~ ~/double\s+([_a-zA-Z\u0024][_a-zA-Z0-9\u0024]*)\s+=\s+(([0-9]+)\.([0-9]+))/).each {
-        ver = it[2]
-    }
-    (versionClass =~ ~/int\s+([_a-zA-Z$][_a-zA-Z0-9$]*)\s+=\s+([0-9]+)/).each {
-        if (it[1].toString() == "PATCH") {
-            patch = it[2]
-        }
-    }
-    return "${ver}.${patch}".toString()
-}
+def forgeBuild = project.hasProperty('forgebuild') ? project.property('forgebuild').toBoolean() : false
 
 group = 'me.deftware'
-version = getVersionFromJava()
+version = project.version
 
 apply plugin: 'maven'
 apply plugin: 'java'
-apply plugin: 'net.minecraftforge.gradle.tweaker-client'
+if (forgeBuild) {
+	apply plugin: 'net.minecraftforge.gradle.forge'
+} else {
+	apply plugin: 'net.minecraftforge.gradle.tweaker-client'
+}
 apply plugin: 'org.spongepowered.mixin'
 apply plugin: "com.github.johnrengelman.shadow"
 
 sourceCompatibility = targetCompatibility = 1.8
+compileJava {
+    sourceCompatibility = targetCompatibility = 1.8
+}
 
 minecraft {
-    version = project.minecraftVersion
+    version = forgeBuild ? project.minecraftVersion + project.forgeVersion : project.minecraftVersion
     runDir = 'run'
     mappings = project.mappingsVer
+    useDepAts = true
     makeObfSourceJar = true
-    tweakClass = 'me.deftware.launch.Launcher'
+    if (!forgeBuild) {
+		tweakClass = 'me.deftware.launch.Launcher'
+    }
 }
 
 repositories {
     mavenCentral()
-    maven { url = 'http://repo.spongepowered.org/maven/' }
-    maven { url 'https://libraries.minecraft.net/' }
-    maven { url 'https://www.dimdev.org/maven/' }
-    maven { url 'https://www.jitpack.io' }
+    maven {
+        name = 'spongepowered-repo'
+        url = 'http://repo.spongepowered.org/maven/'
+    }
+    maven { url 'https://jitpack.io' }
 }
 
 configurations {
@@ -62,21 +68,24 @@ configurations {
 }
 
 dependencies {
-    implementation('org.dimdev:mixin:0.7.11-SNAPSHOT') { transitive = false }
-    implementation('net.minecraft:launchwrapper:1.12') { transitive = false }
-    implementation 'com.google.code.gson:gson:2.8.5'
-    implementation 'org.ow2.asm:asm:6.2'
-    implementation 'org.ow2.asm:asm-commons:6.2'
+    compile('org.spongepowered:mixin:0.7.5-SNAPSHOT') {
+        exclude module: 'launchwrapper'
+        exclude module: 'guava'
+        exclude module: 'gson'
+        exclude module: 'commons-io'
+    }
+    compile 'com.github.vbauer:yandex-translate-api:1.3.3'
 }
 
 mixin {
-    defaultObfuscationEnv notch
-    add sourceSets.main, "mixins.emc.refmap.json"
+    defaultObfuscationEnv forgeBuild ? searge : notch
+    add sourceSets.main, "mixins.client.refmap.json"
 }
 
 shadowJar {
     dependencies {
-        include('org.dimdev:mixin')
+        include(dependency('org.spongepowered:mixin'))
+        include(dependency('com.github.vbauer:yandex-translate-api'))
     }
     classifier = 'full'
 }
@@ -92,36 +101,63 @@ task createPom << {
 }
 
 task copyBuilds(type: Copy) {
+    //delete "$rootDir/maven/me/deftware/" + (forgeBuild ? "EMC-Forge" : "EMC") + "/${version}-${project.minecraftVersion}"
     from "$rootDir/build/libs"
-    into "$rootDir/maven/me/deftware/EMC/${version}-${project.minecraftVersion}/"
+    into "$rootDir/maven/me/deftware/" + (forgeBuild ? "EMC-Forge" : "EMC") + "/${version}-${project.minecraftVersion}/"
+    if (forgeBuild) {
+    	rename { String fileName ->
+		    fileName.replace("EMC", "EMC-Forge")
+		}
+    }
     rename { String fileName ->
 		fileName.replace(version, "${version}-${project.minecraftVersion}")
 	}
 }
 
-task generateApiDocumentation(type: Javadoc) {
-  source = ['src/main/java/me/deftware/client']
-  title = "EMC Framework Documentation"
-  destinationDir = file("docs")
-  failOnError false
-}
-
 reobf {
     shadowJar {
-        mappingType = 'NOTCH'
+        mappingType = forgeBuild ? 'SEARGE' : 'NOTCH'
         classpath = sourceSets.main.compileClasspath
     }
 }
 
-jar {
-    manifest.attributes(
-            "EMC-Version": version,
-            "EMC-ForgeBuild": false,
-            "Manifest-Version": 1.0
-    )
+if (forgeBuild) {
+	jar {
+	    manifest.attributes(
+                "EMC-Version": version,
+                "EMC-ForgeBuild": forgeBuild,
+	            "MixinConfigs": 'mixins.client.json',
+	            "tweakClass": 'org.spongepowered.asm.launch.MixinTweaker',
+	            "TweakOrder": 0,
+	            "FMLCorePluginContainsFMLMod": 'me.deftware.forge.MixinLoader',
+	            "Manifest-Version": 1.0
+	    )
+	}
+} else {
+    jar {
+        manifest.attributes(
+                "EMC-Version": version,
+                "EMC-ForgeBuild": forgeBuild,
+                "Manifest-Version": 1.0
+        )
+    }
 }
 
+println "Building EMC ${version} for " + (forgeBuild ? "Forge" : "vanilla Minecraft") + "..."
 delete "$rootDir/build/libs"
 build.dependsOn(shadowJar)
-build.dependsOn(createPom)
+if (!forgeBuild) {
+	build.dependsOn(createPom)
+}
+
 build.dependsOn(copyBuilds)
+
+tasks.build.doLast(){
+	if (forgeBuild) {
+		copy {
+			from "$rootDir/build/libs/EMC-${version}-full.jar"
+			into "$rootDir/run/mods/"
+			rename("EMC-${version}-full.jar", "EMC.jar")
+		}
+	}
+}

@@ -6,7 +6,7 @@ import net.minecraft.client.Minecraft;
 public class IChat {
 
 	public static void sendChatMessage(String message) {
-		Minecraft.getInstance().player.sendChatMessage(message);
+		Minecraft.getMinecraft().player.sendChatMessage(message);
 	}
 
 	public static void sendClientMessage(String message) {
@@ -18,7 +18,7 @@ public class IChat {
 	}
 
 	public static void clearMessages() {
-		Minecraft.getInstance().ingameGUI.getChatGUI().clearChatMessages(true);
+		Minecraft.getMinecraft().ingameGUI.getChatGUI().clearChatMessages(true);
 	}
 
 }

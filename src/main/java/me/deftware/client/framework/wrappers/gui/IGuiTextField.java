@@ -1,15 +1,12 @@
 package me.deftware.client.framework.wrappers.gui;
 
-import me.deftware.client.framework.fonts.EMCFont;
-import me.deftware.mixin.imp.IMixinGuiTextField;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.GuiTextField;
-import org.lwjgl.glfw.GLFW;
 
-public class IGuiTextField extends GuiTextField implements CustomIGuiEventListener {
+public class IGuiTextField extends GuiTextField {
 
 	public IGuiTextField(int componentId, int x, int y, int width, int height) {
-		super(componentId, Minecraft.getInstance().fontRenderer, x, y, width, height);
+		super(componentId, Minecraft.getMinecraft().fontRenderer, x, y, width, height);
 	}
 
 	public String getTextboxText() {
@@ -20,7 +17,7 @@ public class IGuiTextField extends GuiTextField implements CustomIGuiEventListen
 		setText(text);
 	}
 
-	public void setMaxTextboxLenght(int lenght) {
+	public void setMaxLenght(int lenght) {
 		setMaxStringLength(lenght);
 	}
 
@@ -32,26 +29,20 @@ public class IGuiTextField extends GuiTextField implements CustomIGuiEventListen
 		setFocused(state);
 	}
 
-	/**
-	 * @see GLFW#GLFW_RELEASE
-	 * @see GLFW#GLFW_PRESS
-	 * @see GLFW#GLFW_REPEAT
-	 * @see GLFW#GLFW_MOD_SHIFT
-	 */
-	public void onKeyPressed(int keyCode, int action, int modifiers) {
-		keyPressed(keyCode, action, modifiers);
+	public void onKeyTyped(char typedChar, int keyCode) {
+		textboxKeyTyped(typedChar, keyCode);
 	}
 
 	public void onMouseClicked(int mouseX, int mouseY, int mouseButton) {
 		mouseClicked(mouseX, mouseY, mouseButton);
 	}
 
-	public void onDraw(int mouseX, int mouseY, float partialTicks) {
-		drawTextField(mouseX, mouseY, partialTicks);
+	public void onDraw() {
+		drawTextBox();
 	}
 
 	public void doCursorTick() {
-		tick();
+		updateCursorCounter();
 	}
 
 	public void setTextboxEnabled(boolean state) {
@@ -76,18 +67,6 @@ public class IGuiTextField extends GuiTextField implements CustomIGuiEventListen
 
 	public void setIEnableBackgroundDrawing(boolean state) {
 		setEnableBackgroundDrawing(state);
-	}
-
-	public void setTextboxCustomFont(EMCFont font) {
-		((IMixinGuiTextField) this).setCustomFont(font);
-	}
-
-	public void useTextboxCustomFont(boolean state) {
-		((IMixinGuiTextField) this).setUseCustomFont(state);
-	}
-
-	public void useTextboxMinecraftScale(boolean state) {
-		((IMixinGuiTextField) this).setUseMinecraftScaling(state);
 	}
 
 }

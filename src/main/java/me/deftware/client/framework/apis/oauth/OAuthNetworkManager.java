@@ -22,7 +22,8 @@ public class OAuthNetworkManager extends NetworkManager {
 	}
 
 	@Override
-	public void exceptionCaught(ChannelHandlerContext p_exceptionCaught_1_, Throwable p_exceptionCaught_2_) {
+	public void exceptionCaught(ChannelHandlerContext p_exceptionCaught_1_, Throwable p_exceptionCaught_2_)
+			throws Exception {
 		callback.callback(false, "", "");
 	}
 

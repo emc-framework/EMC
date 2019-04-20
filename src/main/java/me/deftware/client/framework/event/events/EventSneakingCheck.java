@@ -2,9 +2,6 @@ package me.deftware.client.framework.event.events;
 
 import me.deftware.client.framework.event.Event;
 
-/**
- * Triggered when player moves to determine the speed
- */
 public class EventSneakingCheck extends Event {
 
 	private boolean isSneaking;

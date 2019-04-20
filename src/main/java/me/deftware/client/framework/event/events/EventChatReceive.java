@@ -4,9 +4,6 @@ import me.deftware.client.framework.event.Event;
 import me.deftware.client.framework.utils.ChatProcessor;
 import net.minecraft.util.text.ITextComponent;
 
-/**
- * Triggered by Minecraft chat listener at the moment the message is drawn to screen
- */
 public class EventChatReceive extends Event {
 
 	private ITextComponent itc;
@@ -23,13 +20,14 @@ public class EventChatReceive extends Event {
 		this.itc = itc;
 	}
 
+
 	public void setColorCodes() {
 		itc = ChatProcessor.getITextComponent(
 				ChatProcessor.convertColorCodes(itc.getFormattedText()));
 	}
 
 	public String getMessage() {
-		return itc.getUnformattedComponentText();
+		return itc.getUnformattedText();
 	}
 
 	public void replace(String original, String _new) {

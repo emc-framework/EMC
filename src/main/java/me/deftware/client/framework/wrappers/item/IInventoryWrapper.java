@@ -5,7 +5,6 @@ import me.deftware.client.framework.wrappers.entity.IEntityPlayer;
 import me.deftware.client.framework.wrappers.entity.IPlayer;
 import net.minecraft.client.Minecraft;
 import net.minecraft.init.Items;
-import net.minecraft.inventory.ClickType;
 import net.minecraft.inventory.EntityEquipmentSlot;
 import net.minecraft.inventory.Slot;
 import net.minecraft.item.ItemStack;
@@ -32,7 +31,7 @@ public class IInventoryWrapper {
 		if (IEntityPlayer.isNull()) {
 			return false;
 		}
-		ItemStack chest = Minecraft.getInstance().player.getItemStackFromSlot(EntityEquipmentSlot.CHEST);
+		ItemStack chest = Minecraft.getMinecraft().player.getItemStackFromSlot(EntityEquipmentSlot.CHEST);
 		if (chest != null) {
 			if (chest.getItem() == Items.ELYTRA) {
 				return true;
@@ -44,17 +43,13 @@ public class IInventoryWrapper {
 	public static boolean placeStackInHotbar(IItemStack stack) {
 		for (int i = 0; i < 9; i++) {
 			if (IInventoryWrapper.getStackInSlot(i).isEmpty()) {
-				Minecraft.getInstance().player.connection
+				Minecraft.getMinecraft().player.connection
 						.sendPacket(new CPacketCreativeInventoryAction(36 + i, stack.getStack()));
 				return true;
 			}
 		}
 
 		return false;
-	}
-
-	public static IItemStack getHeldInventoryItem() {
-		return new IItemStack(Minecraft.getInstance().player.inventory.getCurrentItem());
 	}
 
 	public static IItemStack getHeldItem(IPlayer player, boolean offhand) {
@@ -67,7 +62,7 @@ public class IInventoryWrapper {
 	}
 
 	public static IItemStack getHeldItem(boolean offhand) {
-		return IInventoryWrapper.getHeldItem(new IPlayer(Minecraft.getInstance().player), offhand);
+		return IInventoryWrapper.getHeldItem(new IPlayer(Minecraft.getMinecraft().player), offhand);
 	}
 
 	public static ArrayList<ISlot> getSlots() {
@@ -75,7 +70,7 @@ public class IInventoryWrapper {
 			return new ArrayList<>();
 		}
 		ArrayList<ISlot> slots = new ArrayList<>();
-		for (Slot d : Minecraft.getInstance().player.inventoryContainer.inventorySlots) {
+		for (Slot d : Minecraft.getMinecraft().player.inventoryContainer.inventorySlots) {
 			slots.add(new ISlot(d));
 		}
 		return slots;
@@ -85,28 +80,28 @@ public class IInventoryWrapper {
 		if (IEntityPlayer.isNull()) {
 			return null;
 		}
-		return new IItemStack(Minecraft.getInstance().player.inventory.armorInventory.get(id));
+		return new IItemStack(Minecraft.getMinecraft().player.inventory.armorInventory.get(id));
 	}
 
 	public static IItemStack getArmorInSlot(int id) {
 		if (IEntityPlayer.isNull()) {
 			return null;
 		}
-		return new IItemStack(Minecraft.getInstance().player.inventory.armorItemInSlot(id));
+		return new IItemStack(Minecraft.getMinecraft().player.inventory.armorItemInSlot(id));
 	}
 
 	public static IItemStack getStackInSlot(int id) {
 		if (IEntityPlayer.isNull()) {
 			return null;
 		}
-		return new IItemStack(Minecraft.getInstance().player.inventory.getStackInSlot(id));
+		return new IItemStack(Minecraft.getMinecraft().player.inventory.getStackInSlot(id));
 	}
 
 	public static int getFirstEmptyStack() {
 		if (IEntityPlayer.isNull()) {
 			return 0;
 		}
-		return Minecraft.getInstance().player.inventory.getFirstEmptyStack();
+		return Minecraft.getMinecraft().player.inventory.getFirstEmptyStack();
 	}
 
 }

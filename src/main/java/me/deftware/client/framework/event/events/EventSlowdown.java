@@ -2,9 +2,6 @@ package me.deftware.client.framework.event.events;
 
 import me.deftware.client.framework.event.Event;
 
-/**
- * Triggered when player is slowed down by hunger, webs, sneaking etc.
- */
 public class EventSlowdown extends Event {
 
 	private SlowdownType type;

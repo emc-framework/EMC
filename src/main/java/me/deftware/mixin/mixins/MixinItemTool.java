@@ -9,11 +9,11 @@ import org.spongepowered.asm.mixin.Shadow;
 public class MixinItemTool implements IMixinItemTool {
 
 	@Shadow
-	protected float attackDamage;
+	protected float damageVsEntity;
 
 	@Override
-	public float getAttackDamage() {
-		return attackDamage;
+	public float getDamageVsEntity() {
+		return damageVsEntity;
 	}
 
 }

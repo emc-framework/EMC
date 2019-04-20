@@ -20,7 +20,6 @@ public class OSUtils {
 
 	/**
 	 * Returns the .minecraft directory, on all supported OSes
-	 *
 	 * @return
 	 */
 	public static String getMCDir() {

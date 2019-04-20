@@ -1,46 +1,31 @@
 package me.deftware.client.framework.event;
 
-import me.deftware.client.framework.main.Bootstrap;
+import me.deftware.client.framework.event.events.EventUpdate;
 
+import java.lang.annotation.Retention;
+import java.lang.annotation.RetentionPolicy;
 import java.lang.reflect.Method;
-import java.util.concurrent.ConcurrentHashMap;
+import java.util.HashMap;
 
 public class EventBus {
 
-	private static ConcurrentHashMap<Class, ConcurrentHashMap<Class, ConcurrentHashMap<Method, Object>>> classes = new ConcurrentHashMap<>();
+	// Event type, class - class instance
+	private static HashMap<Class, HashMap<Class, HashMap<Method, Object>>> classes = new HashMap<>();
 
-	public static void clearEvents() {
-		classes.clear();
-	}
-
-	public static synchronized void registerClass(Class clazz, Object instance) {
-		Bootstrap.logger.debug(String.format("Loading event handlers in class %s", clazz.getName()));
-		for (Method method : clazz.getDeclaredMethods()) {
+	public static void registerClass(Class clazz, Object instance) {
+		for (Method method : clazz.getMethods()) {
 			if (method.isAnnotationPresent(EventHandler.class)) {
-				if (!method.isAccessible()) {
-					Bootstrap.logger.debug(String.format("Making method %s accessible", method.getName()));
-					method.setAccessible(true);
-				}
 				EventHandler annotation = method.getAnnotation(EventHandler.class);
 				Class eventType = annotation.eventType();
 				if (!classes.containsKey(eventType)) {
-					classes.put(eventType, new ConcurrentHashMap<>());
+					classes.put(eventType, new HashMap<>());
 				}
 				if (!classes.get(eventType).containsKey(clazz)) {
-					classes.get(eventType).put(clazz, new ConcurrentHashMap<>());
+					classes.get(eventType).put(clazz, new HashMap<>());
 				}
 				classes.get(eventType).get(clazz).putIfAbsent(method, instance);
-				Bootstrap.logger.debug(String.format("Loaded event handler for method %s", method.getName()));
 			}
 		}
-	}
-
-	public static synchronized void unRegisterClass(Class clazz) {
-		classes.forEach((event, map) -> {
-			if (map.containsKey(clazz)) {
-				classes.get(event).remove(clazz);
-			}
-		});
 	}
 
 	public static void sendEvent(Event event) {
@@ -55,6 +40,26 @@ public class EventBus {
 				});
 			});
 		}
+	}
+
+	@Retention(RetentionPolicy.RUNTIME)
+	public @interface EventHandler {
+
+		Class eventType() default Event.class;
+
+	}
+
+	public static class TestEventHandler {
+
+		public TestEventHandler() {
+			registerClass(this.getClass(), this);
+		}
+
+		@EventHandler(eventType = EventUpdate.class)
+		public void onUpdate(EventUpdate event) {
+			System.out.println("It works");
+		}
+
 	}
 
 }

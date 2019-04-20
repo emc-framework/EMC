@@ -1,13 +1,7 @@
 package me.deftware.mixin.mixins;
 
-import me.deftware.client.framework.event.events.EventKnockback;
-import me.deftware.client.framework.event.events.EventSlowdown;
-import me.deftware.client.framework.event.events.EventSneakingCheck;
-import me.deftware.client.framework.maps.SettingsMap;
-import me.deftware.mixin.imp.IMixinEntity;
-import net.minecraft.client.entity.EntityPlayerSP;
-import net.minecraft.entity.Entity;
-import net.minecraft.util.math.AxisAlignedBB;
+import static org.spongepowered.asm.lib.Opcodes.GETFIELD;
+
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.Shadow;
 import org.spongepowered.asm.mixin.injection.At;
@@ -15,7 +9,14 @@ import org.spongepowered.asm.mixin.injection.Inject;
 import org.spongepowered.asm.mixin.injection.Redirect;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 
-import static org.spongepowered.asm.lib.Opcodes.GETFIELD;
+import me.deftware.client.framework.event.events.EventKnockback;
+import me.deftware.client.framework.event.events.EventNoClip;
+import me.deftware.client.framework.event.events.EventSlowdown;
+import me.deftware.client.framework.event.events.EventSneakingCheck;
+import me.deftware.mixin.imp.IMixinEntity;
+import net.minecraft.client.entity.EntityPlayerSP;
+import net.minecraft.entity.Entity;
+import net.minecraft.util.math.AxisAlignedBB;
 
 @Mixin(Entity.class)
 public abstract class MixinEntity implements IMixinEntity {
@@ -84,18 +85,18 @@ public abstract class MixinEntity implements IMixinEntity {
 	public abstract boolean isSprinting();
 
 	@Shadow
-	public abstract boolean isPassenger();
+	public abstract boolean isRiding();
 
 	@Shadow
-	public abstract AxisAlignedBB getBoundingBox();
+	public abstract AxisAlignedBB getEntityBoundingBox();
 
 	@Shadow
 	public abstract boolean getFlag(int flag);
 
 	@Redirect(method = "move", at = @At(value = "FIELD", target = "Lnet/minecraft/entity/Entity;noClip:Z", opcode = GETFIELD))
 	private boolean noClipCheck(Entity self) {
-		boolean noClipCheck = (boolean) SettingsMap.getValue(SettingsMap.MapKeys.ENTITY_SETTINGS, "NOCLIP", false);
-		return noClip || noClipCheck && self instanceof EntityPlayerSP;
+		EventNoClip event = new EventNoClip(noClip).send();
+		return noClip || event.isNoclip() && self instanceof EntityPlayerSP;
 	}
 
 	@Redirect(method = "move", at = @At(value = "FIELD", target = "Lnet/minecraft/entity/Entity;isInWeb:Z", opcode = GETFIELD))

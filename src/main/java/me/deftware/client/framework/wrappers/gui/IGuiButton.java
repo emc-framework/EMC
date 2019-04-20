@@ -1,9 +1,10 @@
 package me.deftware.client.framework.wrappers.gui;
 
+
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.GuiButton;
 
-public class IGuiButton extends GuiButton implements CustomIGuiEventListener {
+public class IGuiButton extends GuiButton {
 
 	public IGuiButton(int buttonId, int x, int y, String buttonText) {
 		super(buttonId, x, y, 200, 20, buttonText);
@@ -22,22 +23,14 @@ public class IGuiButton extends GuiButton implements CustomIGuiEventListener {
 	}
 
 	@Override
-	public void render(int mouseX, int mouseY, float partialTicks) {
+	public void drawButton(Minecraft mc, int mouseX, int mouseY, float partialTicks) {
 		if (onDraw(mouseX, mouseY) == 0) {
-			super.render(mouseX, mouseY, partialTicks);
+			super.drawButton(mc, mouseX, mouseY, partialTicks);
 		}
 	}
 
 	public void drawCenteredString(String text, int x, int y, int color) {
-		Minecraft.getInstance().fontRenderer.drawStringWithShadow(text, x - Minecraft.getInstance().fontRenderer.getStringWidth(text) / 2, y, color);
-	}
-
-	@Override
-	public void onClick(double x, double y) {
-		onButtonClick(x, y);
-	}
-
-	public void onButtonClick(double mouseX, double mouseY) {
+		Minecraft.getMinecraft().fontRenderer.drawStringWithShadow(text, x - Minecraft.getMinecraft().fontRenderer.getStringWidth(text) / 2, y, color);
 	}
 
 	protected int onDraw(int mouseX, int mouseY) {
@@ -60,27 +53,28 @@ public class IGuiButton extends GuiButton implements CustomIGuiEventListener {
 		return enabled;
 	}
 
-	protected int getButtonX() {
+
+	protected int getX() {
 		return x;
 	}
 
-	protected int getButtonY() {
+	protected int getY() {
 		return y;
 	}
 
-	protected void setButtonY(int y) {
+	protected void setY(int y) {
 		this.y = y;
 	}
 
-	protected void setButtonX(int x) {
+	protected void setX(int x) {
 		this.x = x;
 	}
 
-	protected int getTheButtonWidth() {
+	protected int getWidth() {
 		return width;
 	}
 
-	protected int getTheButtonHeight() {
+	protected int getHeight() {
 		return height;
 	}
 
@@ -92,11 +86,11 @@ public class IGuiButton extends GuiButton implements CustomIGuiEventListener {
 		this.height = height;
 	}
 
-	protected boolean isButtonHovered() {
+	protected boolean isHovered() {
 		return hovered;
 	}
 
-	protected void setButtonHovered(boolean state) {
+	protected void setHovered(boolean state) {
 		hovered = state;
 	}
 
