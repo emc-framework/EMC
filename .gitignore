@@ -1,0 +1,16 @@
+.DS_Store
+/*
+!/gradlew
+!/gradlew.bat
+!/.gitignore
+!/src
+!/gradle
+!/README.md
+!/example_client.json
+!/build.gradle.forge
+!/build.gradle
+!/.gitlab-ci.yml
+!/versions.json
+!/build.bat
+!/gradle.properties
+!/settings.gradle

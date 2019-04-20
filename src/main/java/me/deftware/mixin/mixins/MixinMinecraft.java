@@ -10,10 +10,7 @@ import net.minecraft.client.gui.GuiMainMenu;
 import net.minecraft.client.gui.GuiScreen;
 import net.minecraft.util.Session;
 import net.minecraft.util.Timer;
-import org.spongepowered.asm.mixin.Final;
-import org.spongepowered.asm.mixin.Mixin;
-import org.spongepowered.asm.mixin.Mutable;
-import org.spongepowered.asm.mixin.Shadow;
+import org.spongepowered.asm.mixin.*;
 import org.spongepowered.asm.mixin.injection.At;
 import org.spongepowered.asm.mixin.injection.Inject;
 import org.spongepowered.asm.mixin.injection.ModifyVariable;
@@ -53,16 +50,21 @@ public abstract class MixinMinecraft implements IMixinMinecraft {
 	@Shadow
 	public abstract void middleClickMouse();
 
+	@Shadow
+	public boolean isWindowFocused;
+
 	@ModifyVariable(method = "displayGuiScreen", at = @At("HEAD"))
 	private GuiScreen displayGuiScreenModifier(GuiScreen screen) {
-		EventGuiScreenDisplay event = new EventGuiScreenDisplay(screen).send();
+		EventGuiScreenDisplay event = new EventGuiScreenDisplay(screen);
+		event.broadcast();
 		return event.isCanceled() ? null : event.getScreen();
 	}
 
 	@Inject(method = "runTick", at = @At("HEAD"))
 	private void runTick(CallbackInfo ci) {
 		if (Minecraft.getInstance().currentScreen instanceof GuiMainMenu) {
-			EventGuiScreenDisplay event = new EventGuiScreenDisplay(Minecraft.getInstance().currentScreen).send();
+			EventGuiScreenDisplay event = new EventGuiScreenDisplay(Minecraft.getInstance().currentScreen);
+			event.broadcast();
 			if (!(event.getScreen() instanceof GuiMainMenu)) {
 				displayGuiScreen(event.getScreen());
 			}
@@ -71,7 +73,7 @@ public abstract class MixinMinecraft implements IMixinMinecraft {
 
 	@Inject(method = "shutdownMinecraftApplet", at = @At("HEAD"))
 	public void shutdownMinecraftApplet(CallbackInfo ci) {
-		new EventShutdown().send();
+		new EventShutdown().broadcast();
 		Bootstrap.isRunning = false;
 	}
 
@@ -118,6 +120,11 @@ public abstract class MixinMinecraft implements IMixinMinecraft {
 	@Override
 	public MainWindow getMainWindow() {
 		return Minecraft.getInstance().mainWindow;
+	}
+
+	@Override
+	public boolean getIsWindowFocused() {
+		return isWindowFocused;
 	}
 
 }

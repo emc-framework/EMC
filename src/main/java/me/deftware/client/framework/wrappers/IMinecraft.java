@@ -60,6 +60,10 @@ public class IMinecraft {
 				.getParent();
 	}
 
+	public static boolean isFocused() {
+		return ((IMixinMinecraft) Minecraft.getInstance()).getIsWindowFocused();
+	}
+
 	public static double getScaleFactor() {
 		return Minecraft.getInstance().mainWindow.getGuiScaleFactor();
 	}
@@ -253,6 +257,13 @@ public class IMinecraft {
 			return null;
 		}
 		return new IEntity(Minecraft.getInstance().objectMouseOver.entity);
+	}
+
+	public static IEntity getRenderViewEntity() {
+		if(Minecraft.getInstance().getRenderViewEntity() == null) {
+			return null;
+		}
+		return new IEntity(Minecraft.getInstance().getRenderViewEntity());
 	}
 
 	public static boolean entityHitInstanceOf(EntityType type) {

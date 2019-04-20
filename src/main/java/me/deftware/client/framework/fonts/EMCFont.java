@@ -58,6 +58,8 @@ public interface EMCFont {
 
     boolean isItalics();
 
+    void setScaled(boolean state);
+
     void setItalics(boolean italics);
 
     boolean isUnderlined();
@@ -67,10 +69,6 @@ public interface EMCFont {
     boolean isStriked();
 
     void setStriked(boolean striked);
-
-    boolean isMoving();
-
-    void setMoving(boolean moving);
 
     boolean isAntialiased();
 
@@ -86,7 +84,7 @@ public interface EMCFont {
         public static byte ITALICS = 0b00000010;
         public static byte UNDERLINED = 0b00000100;
         public static byte STRIKED = 0b00001000;
-        public static byte MOVING = 0b00010000;
+        public static byte SCALED = 0b00010000;
         public static byte ANTIALIASED = 0b00100000;
         public static byte MEMORYSAVING = 0b01000000;
     }
