@@ -7,7 +7,7 @@ import net.minecraft.client.renderer.ItemRenderer;
 public class IRenderItem {
 
 	private static ItemRenderer getRenderItem() {
-		return Minecraft.getInstance().getItemRenderer();
+		return Minecraft.getMinecraft().getRenderItem();
 	}
 
 	public static void renderItemIntoGUI(IItemStack stack, int x, int y) {
@@ -15,7 +15,7 @@ public class IRenderItem {
 	}
 
 	public static void renderItemOverlays(IItemStack stack, int x, int y) {
-		IRenderItem.getRenderItem().renderItemOverlays(Minecraft.getInstance().fontRenderer, stack.getStack(), x, y);
+		IRenderItem.getRenderItem().renderItemOverlays(Minecraft.getMinecraft().fontRenderer, stack.getStack(), x, y);
 	}
 
 	public static void renderItemAndEffectIntoGUI(IItemStack stack, int x, int y) {
@@ -23,7 +23,7 @@ public class IRenderItem {
 	}
 
 	public static void renderItemOverlayIntoGUI(IItemStack stack, int x, int y, String text) {
-		IRenderItem.getRenderItem().renderItemOverlayIntoGUI(Minecraft.getInstance().fontRenderer, stack.getStack(), x, y, text);
+		IRenderItem.getRenderItem().renderItemOverlayIntoGUI(Minecraft.getMinecraft().fontRenderer, stack.getStack(), x, y, text);
 	}
 
 	public static void setZLevel(float z) {

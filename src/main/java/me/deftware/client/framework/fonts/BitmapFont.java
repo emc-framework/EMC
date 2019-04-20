@@ -3,6 +3,9 @@ package me.deftware.client.framework.fonts;
 import me.deftware.client.framework.main.Bootstrap;
 import me.deftware.client.framework.utils.ChatColor;
 import me.deftware.client.framework.utils.render.GraphicsUtil;
+import me.deftware.client.framework.utils.render.NonScaledRenderer;
+import me.deftware.client.framework.utils.render.TexUtil;
+import me.deftware.client.framework.utils.render.Texture;
 import me.deftware.client.framework.wrappers.IMinecraft;
 import me.deftware.client.framework.wrappers.gui.IGuiScreen;
 import org.apache.commons.lang3.ArrayUtils;
@@ -25,13 +28,12 @@ public class BitmapFont implements EMCFont {
     protected boolean italics;
     protected boolean underlined;
     protected boolean striked;
-    protected boolean moving;
+    protected boolean scaling;
     protected boolean antialiased;
     protected boolean memorysaving;
     protected Font stdFont;
 
-    protected HashMap<Character, Integer> textureIDStore = new HashMap<>();
-    protected HashMap<Character, int[]> textureDimensionsStore = new HashMap<>();
+    protected HashMap<Character, Texture> bitmapStore = new HashMap<>();
 
     public BitmapFont(@Nonnull String fontName, int fontSize, int modifiers) {
         this.fontName = fontName;
@@ -41,7 +43,7 @@ public class BitmapFont implements EMCFont {
         this.italics = ((modifiers & 2) != 0);
         this.underlined = ((modifiers & 4) != 0);
         this.striked = ((modifiers & 8) != 0);
-        this.moving = ((modifiers & 16) != 0);
+        this.scaling = ((modifiers & 16) != 0);
         this.antialiased = ((modifiers & 32) != 0);
         this.memorysaving = ((modifiers & 64) != 0);
 
@@ -53,7 +55,11 @@ public class BitmapFont implements EMCFont {
 
     protected void prepareStandardFont() {
         if (!bold && !italics) {
-            this.stdFont = new Font(fontName, Font.PLAIN, fontSize);
+            if (FontManager.customFonts.containsKey(fontName)) {
+                this.stdFont = FontManager.customFonts.get(fontName).deriveFont(Font.PLAIN, fontSize);
+            } else {
+                this.stdFont = new Font(fontName, Font.PLAIN, fontSize);
+            }
         } else {
             if (bold && italics) {
                 this.stdFont = new Font(fontName, Font.BOLD | java.awt.Font.ITALIC, fontSize);
@@ -70,7 +76,9 @@ public class BitmapFont implements EMCFont {
         if (extras == null)
             extras = "";
         char[] additionalCharacters = extras.toCharArray();
+        //Generate the font bitmaps
 
+        Texture bitmapTexture;
         //Lowercase alphabet
         for (char lowercaseAlphabet = 'a'; lowercaseAlphabet <= 'z'; lowercaseAlphabet++) {
             characterGenerate(lowercaseAlphabet, color);
@@ -100,9 +108,10 @@ public class BitmapFont implements EMCFont {
     }
 
     protected void characterGenerate(char character, Color color) {
+        Texture bitmapTexture;
         String letterBuffer = String.valueOf(character);
-        int textwidth = getStringWidth(letterBuffer);
-        int textheight = getStringHeight(letterBuffer);
+        int textwidth = getStringWidthNonScaled(letterBuffer);
+        int textheight = getStringHeightNonScaled(letterBuffer);
 
         BufferedImage characterTexture = new BufferedImage(textwidth, textheight, BufferedImage.TYPE_INT_ARGB);
         Graphics2D graphics = characterTexture.createGraphics();
@@ -115,8 +124,10 @@ public class BitmapFont implements EMCFont {
         graphics.drawString(letterBuffer, 0, textheight - textheight / 4);
         graphics.dispose();
 
-        textureIDStore.put(character, GraphicsUtil.loadTextureFromBufferedImage(characterTexture));
-        textureDimensionsStore.put(character, new int[]{characterTexture.getWidth(), characterTexture.getHeight()});
+        bitmapTexture = new Texture(textwidth, textheight, true);
+        bitmapTexture.fillFromBufferedImageFlip(characterTexture);
+        bitmapTexture.update();
+        bitmapStore.put(character, bitmapTexture);
     }
 
     /**
@@ -139,25 +150,25 @@ public class BitmapFont implements EMCFont {
 
     @Override
     public int drawString(int x, int y, String text, Color color) {
+        if (scaling) {
+            x *= NonScaledRenderer.getScale();
+            y *= NonScaledRenderer.getScale();
+        }
         char[] buffer = text.toCharArray();
-
+        int offset = 0;
         int screenWidth = 1;
         int screenHeight = 1;
-
         if (!IGuiScreen.isWindowMinimized()) {
             screenWidth = IGuiScreen.getDisplayWidth();
             screenHeight = IGuiScreen.getDisplayHeight();
         }
-
         GL11.glPushMatrix();
         GraphicsUtil.prepareMatrix(screenWidth, screenHeight);
-        int offset = 0;
         for (int character = 0; character < buffer.length; character++) {
-
             if (buffer[character] == ' ') {
-                offset += getStringWidth(" ");
+                offset += getStringWidthNonScaled(" ");
                 continue;
-            } else if (!textureIDStore.containsKey(buffer[character])) {
+            } else if (!bitmapStore.containsKey(buffer[character])) {
                 buffer[character] = '?';
             }
             if (color != null) {
@@ -167,21 +178,16 @@ public class BitmapFont implements EMCFont {
                 float alpha = color.getAlpha() > 0 ? color.getAlpha() * (1f / 255f) : 0;
                 GL11.glColor4f(red, green, blue, alpha);
             }
-
-            GL11.glBindTexture(GL11.GL_TEXTURE_2D, textureIDStore.get(buffer[character]));
-            GL11.glBlendFunc(GL11.GL_SRC_ALPHA, GL11.GL_ONE_MINUS_SRC_ALPHA);
-            int width = textureDimensionsStore.get(buffer[character])[0];
-            int height = textureDimensionsStore.get(buffer[character])[1];
-            GraphicsUtil.drawQuads(x + offset, y, width, height); //GL PART //8745
-
+            Texture texture = bitmapStore.get(buffer[character]);
+            texture.updateTexture();
+            texture.bind(GL11.GL_ONE_MINUS_SRC_ALPHA);
+            int width = texture.getWidth();
+            int height = texture.getHeight();
+            GraphicsUtil.drawQuads(x + offset, y, width, height); //GL PART
             offset += width;
         }
-
         GL11.glPopMatrix();
-        GL11.glDisable(GL11.GL_BLEND);
-        GL11.glDisable(GL11.GL_ALPHA_TEST);
         IMinecraft.triggerGuiRenderer();
-
         lastRenderedWidth = offset;
         return 0;
     }
@@ -207,7 +213,7 @@ public class BitmapFont implements EMCFont {
 
     @Override
     public int drawCenteredString(int x, int y, String text, Color color) {
-        drawString(x - (getStringWidth(ChatColor.stripColor(text)) / 2), y - (getStringHeight(ChatColor.stripColor(text)) / 2), text, color);
+        drawString(x - (getStringWidthNonScaled(ChatColor.stripColor(text)) / 2), y - (getStringHeightNonScaled(ChatColor.stripColor(text)) / 2), text, color);
         return 0;
     }
 
@@ -231,12 +237,28 @@ public class BitmapFont implements EMCFont {
 
     @Override
     public int getStringWidth(String text) {
+        if (!scaling) {
+            return getStringWidthNonScaled(text);
+        }
+        FontMetrics fontMetrics = new Canvas().getFontMetrics(stdFont);
+        return (int) (fontMetrics.charsWidth(text.toCharArray(), 0, text.length()) / NonScaledRenderer.getScale());
+    }
+
+    public int getStringWidthNonScaled(String text) {
         FontMetrics fontMetrics = new Canvas().getFontMetrics(stdFont);
         return fontMetrics.charsWidth(text.toCharArray(), 0, text.length());
     }
 
     @Override
     public int getStringHeight(String text) {
+        if (!scaling) {
+            return getStringHeightNonScaled(text);
+        }
+        FontMetrics fontMetrics = new Canvas().getFontMetrics(stdFont);
+        return (int) (fontMetrics.getHeight() / NonScaledRenderer.getScale());
+    }
+
+    public int getStringHeightNonScaled(String text) {
         FontMetrics fontMetrics = new Canvas().getFontMetrics(stdFont);
         return fontMetrics.getHeight();
     }
@@ -258,12 +280,10 @@ public class BitmapFont implements EMCFont {
 
     @Override
     public void destroy() {
-        GL11.glBindTexture(GL11.GL_TEXTURE_2D, 0); //Bind texture to 0 - unbind everything
-        for (Character key : textureIDStore.keySet()) {
-            GL11.glDeleteTextures(textureIDStore.get(key));
+        for (Character key : bitmapStore.keySet()) {
+            bitmapStore.get(key).destroy();
         }
-        textureIDStore.clear();
-        textureDimensionsStore.clear();
+        bitmapStore.clear();
     }
 
     @Override
@@ -339,13 +359,8 @@ public class BitmapFont implements EMCFont {
     }
 
     @Override
-    public boolean isMoving() {
-        return moving;
-    }
-
-    @Override
-    public void setMoving(boolean moving) {
-        this.moving = moving;
+    public void setScaled(boolean state) {
+        scaling = state;
     }
 
     @Override

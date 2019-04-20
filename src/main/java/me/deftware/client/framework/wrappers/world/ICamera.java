@@ -6,7 +6,7 @@ import net.minecraft.entity.Entity;
 public class ICamera {
 
 	private static Entity getRenderViewEntity() {
-		return Minecraft.getInstance().getRenderViewEntity();
+		return Minecraft.getMinecraft().getRenderViewEntity();
 	}
 
 	public static double getPosX() {

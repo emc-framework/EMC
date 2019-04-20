@@ -85,8 +85,8 @@ public class Texture {
 	public int fillFromBufferedFormatImage(BufferedImage img, NativeImage.PixelFormat pixelFormat) {
 		byte[] imageBytes = ((DataBufferByte) img.getData().getDataBuffer()).getData();
 		try {
-			this.nativeImage = NativeImage.read(pixelFormat, new ByteArrayInputStream(imageBytes));
-			this.dynamicTexture.setTextureData(nativeImage);
+			this.nativeImage = NativeImage.func_211679_a(pixelFormat, new ByteArrayInputStream(imageBytes));
+			this.dynamicTexture.func_195415_a(nativeImage);
 			this.refreshParameters();
 		} catch (IOException ioe) {
 			return 1;
@@ -117,7 +117,7 @@ public class Texture {
 					this.setPixel(x, y, rgb);
 				}
 			}
-			this.dynamicTexture.setTextureData(this.nativeImage);
+			this.dynamicTexture.func_195415_a(this.nativeImage);
 		} catch (Exception e) {
 			e.printStackTrace();
 			return 1;
@@ -150,12 +150,12 @@ public class Texture {
 	}
 
 	public byte getAlpha(int x, int y) {
-		return this.nativeImage.getPixelLuminanceOrAlpha(x, y);
+		return this.nativeImage.func_211675_e(x, y);
 	}
 
 	public int updatePixels() {
 		try {
-			this.dynamicTexture.setTextureData(nativeImage);
+			this.dynamicTexture.func_195415_a(nativeImage);
 		} catch (Exception e) {
 			e.printStackTrace();
 			return 1;
@@ -189,7 +189,7 @@ public class Texture {
 
 
 	public void blindBind() {
-		this.dynamicTexture.bindTexture();
+		this.dynamicTexture.func_195412_h();
 	}
 
 

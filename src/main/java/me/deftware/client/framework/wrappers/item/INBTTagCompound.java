@@ -13,19 +13,23 @@ public class INBTTagCompound {
     public boolean isNull() { return compound == null; }
 
     public boolean contains(String key) {
-        return compound.contains(key);
+        return compound.hasKey(key);
     }
 
     public boolean contains(String key, int i) {
-        return compound.contains(key, i);
+        return compound.hasKey(key, i);
     }
 
     public INBTTagCompound get(String key) {
-        return new INBTTagCompound(compound.getCompound(key));
+        return new INBTTagCompound(compound.getCompoundTag(key));
     }
 
     public NBTTagCompound getCompound() {
         return compound;
+    }
+
+    public void setTagInfo(String key, INBTTagList list) {
+        compound.setTag(key, list.list);
     }
 
 }

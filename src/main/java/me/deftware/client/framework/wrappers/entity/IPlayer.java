@@ -30,13 +30,13 @@ public class IPlayer {
 	}
 
 	public float getNametagSize() {
-		return Minecraft.getInstance().player.getDistance(player) / 2.5F <= 1.5F ? 2.0F
-				: Minecraft.getInstance().player.getDistance(player) / 2.5F;
+		return Minecraft.getMinecraft().player.getDistance(player) / 2.5F <= 1.5F ? 2.0F
+				: Minecraft.getMinecraft().player.getDistance(player) / 2.5F;
 	}
 
 	public boolean isSelf() {
-		if (player == Minecraft.getInstance().player
-				|| player.getName().equals(Minecraft.getInstance().getSession().getUsername())) {
+		if (player == Minecraft.getMinecraft().player
+				|| player.getName().equals(Minecraft.getMinecraft().getSession().getUsername())) {
 			return true;
 		}
 		return false;

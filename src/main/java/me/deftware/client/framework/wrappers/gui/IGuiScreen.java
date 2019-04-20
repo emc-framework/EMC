@@ -1,28 +1,34 @@
 package me.deftware.client.framework.wrappers.gui;
 
+import me.deftware.client.framework.utils.ResourceUtils;
+import me.deftware.client.framework.utils.render.Texture;
 import me.deftware.client.framework.wrappers.IMinecraft;
 import me.deftware.client.framework.wrappers.IResourceLocation;
 import net.minecraft.client.Minecraft;
-import net.minecraft.client.gui.Gui;
-import net.minecraft.client.gui.GuiButton;
-import net.minecraft.client.gui.GuiScreen;
-import net.minecraft.client.gui.IGuiEventListener;
+import net.minecraft.client.gui.*;
 import net.minecraft.client.renderer.GlStateManager;
 import net.minecraft.util.StringUtils;
 import net.minecraft.util.Util;
 import org.lwjgl.glfw.GLFW;
+import org.lwjgl.opengl.GL11;
 
+import javax.imageio.ImageIO;
 import java.awt.*;
 import java.awt.datatransfer.ClipboardOwner;
 import java.awt.datatransfer.DataFlavor;
 import java.awt.datatransfer.StringSelection;
 import java.awt.datatransfer.Transferable;
+import java.awt.image.BufferedImage;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
 
 public abstract class IGuiScreen extends GuiScreen {
 
 	private boolean pause = true;
+	private HashMap<String, Texture> textureHashMap = new HashMap<>();
+	protected IGuiScreen parent = null;
+	protected boolean escGoesBack = true;
 
 	public IGuiScreen(boolean doesGuiPause) {
 		pause = doesGuiPause;
@@ -32,10 +38,15 @@ public abstract class IGuiScreen extends GuiScreen {
 		this(true);
 	}
 
+	public IGuiScreen(IGuiScreen parent) {
+		this(true);
+		this.parent = parent;
+	}
+
 	@Override
-	public void render(int mouseX, int mouseY, float partialTicks) {
+	public void drawScreen(int mouseX, int mouseY, float partialTicks) {
 		onDraw(mouseX, mouseY, partialTicks);
-		super.render(mouseX, mouseY, partialTicks);
+		super.drawScreen(mouseX, mouseY, partialTicks);
 		onPostDraw(mouseX, mouseY, partialTicks);
 	}
 
@@ -51,8 +62,8 @@ public abstract class IGuiScreen extends GuiScreen {
 	}
 
 	@Override
-	public void tick() {
-		super.tick();
+	public void updateScreen() {
+		super.updateScreen();
 		onUpdate();
 	}
 
@@ -60,7 +71,7 @@ public abstract class IGuiScreen extends GuiScreen {
 	public void initGui() {
 		super.initGui();
 		onInitGui();
-		children.add(new IGuiEventListener() {
+		field_195124_j.add(new IGuiEventListener() {
 
 			@Override
 			public boolean mouseClicked(double mouseX, double mouseY, int mouseButton) {
@@ -86,14 +97,14 @@ public abstract class IGuiScreen extends GuiScreen {
 	@Override
 	public boolean keyPressed(int keyCode, int action, int modifiers) {
 		onKeyPressed(keyCode, action, modifiers);
-		if (keyCode == GLFW.GLFW_KEY_ESCAPE) {
-			IMinecraft.setGuiScreen(null);
+		if (keyCode == GLFW.GLFW_KEY_ESCAPE && escGoesBack) {
+			IMinecraft.setGuiScreen(parent);
 		}
 		return true;
 	}
 
 	public void addEventListener(CustomIGuiEventListener listener) {
-		this.children.add(listener);
+		this.field_195124_j.add(listener);
 	}
 
 	protected void drawIDefaultBackground() {
@@ -105,17 +116,17 @@ public abstract class IGuiScreen extends GuiScreen {
 	}
 
 	protected List<GuiButton> getButtonList() {
-		return buttons;
+		return buttonList;
 	}
 
 	protected void addButton(IGuiButton button) {
-		children.add(button);
-		buttons.add(button);
+		field_195124_j.add(button);
+		buttonList.add(button);
 	}
 
 	protected ArrayList<IGuiButton> getIButtonList() {
 		ArrayList<IGuiButton> list = new ArrayList<>();
-		for (GuiButton b : buttons) {
+		for (GuiButton b : buttonList) {
 			if (b instanceof IGuiButton) {
 				list.add((IGuiButton) b);
 			}
@@ -124,7 +135,7 @@ public abstract class IGuiScreen extends GuiScreen {
 	}
 
 	protected void clearButtons() {
-		buttons.clear();
+		buttonList.clear();
 	}
 
 	/**
@@ -159,12 +170,12 @@ public abstract class IGuiScreen extends GuiScreen {
 	}
 
 	public static void openLink(String url) {
-		Util.getOSType().openURI(url);
+		Util.getOSType().openUri(url);
 	}
 
 	public void drawCenteredString(String text, int x, int y, int color) {
-		Minecraft.getInstance().fontRenderer.drawStringWithShadow(text,
-				x - Minecraft.getInstance().fontRenderer.getStringWidth(text) / 2, y, color);
+		Minecraft.getMinecraft().fontRenderer.drawStringWithShadow(text,
+				x - Minecraft.getMinecraft().fontRenderer.getStringWidth(text) / 2, y, color);
 	}
 
 	public void setDoesGuiPauseGame(boolean state) {
@@ -173,8 +184,29 @@ public abstract class IGuiScreen extends GuiScreen {
 
 	protected void drawTexture(IResourceLocation texture, int x, int y, int width, int height) {
 		mc.getTextureManager().bindTexture(texture);
-		GlStateManager.color4f(1.0F, 1.0F, 1.0F, 1.0F);
+		GlStateManager.color(1.0F, 1.0F, 1.0F, 1.0F);
 		GuiScreen.drawModalRectWithCustomSizedTexture(x, y, 0, 0, width, height, width, height);
+	}
+
+	protected void drawTexture(String mod, String texture, int x, int y, int width, int height) {
+		GL11.glPushMatrix();
+		if (!textureHashMap.containsKey(texture)) {
+			try {
+				BufferedImage img = ImageIO.read(ResourceUtils.getStreamFromModResources(mod, texture));
+				Texture tex = new Texture(img.getWidth(), img.getHeight(), true);
+				tex.fillFromBufferedImageFlip(img);
+				tex.update();
+				tex.bind();
+				textureHashMap.put(texture, tex);
+			} catch (Exception ex) {
+				ex.printStackTrace();
+			}
+		} else {
+			GL11.glColor4f(1.0F, 1.0F, 1.0F, 1.0F);
+			textureHashMap.get(texture).updateTexture();
+		}
+		GuiScreen.drawModalRectWithCustomSizedTexture(x, y, 0, 0, width, height, width, height);
+		GL11.glPopMatrix();
 	}
 
 	public static boolean isCtrlPressed() {
@@ -190,19 +222,19 @@ public abstract class IGuiScreen extends GuiScreen {
 	}
 
 	public static int getScaledHeight() {
-		return Minecraft.getInstance().mainWindow.getScaledHeight();
+		return Minecraft.getMinecraft().mainWindow.getScaledHeight();
 	}
 
 	public static int getScaledWidth() {
-		return Minecraft.getInstance().mainWindow.getScaledWidth();
+		return Minecraft.getMinecraft().mainWindow.getScaledWidth();
 	}
 
 	public static int getDisplayHeight() {
-		return Minecraft.getInstance().mainWindow.getHeight();
+		return Minecraft.getMinecraft().mainWindow.getHeight();
 	}
 
 	public static int getDisplayWidth() {
-		return Minecraft.getInstance().mainWindow.getWidth();
+		return Minecraft.getMinecraft().mainWindow.getWidth();
 	}
 
 	public static boolean isWindowMinimized(){
@@ -216,7 +248,7 @@ public abstract class IGuiScreen extends GuiScreen {
 	}
 
 	public void setFocusedComponent(CustomIGuiEventListener listener) {
-		this.setFocused(listener);
+		this.func_195073_a(listener);
 	}
 
 	protected void onGuiClose() {

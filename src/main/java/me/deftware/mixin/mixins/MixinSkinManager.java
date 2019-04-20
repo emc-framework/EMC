@@ -20,73 +20,73 @@ import java.util.concurrent.ExecutorService;
 @Mixin(SkinManager.class)
 public abstract class MixinSkinManager {
 
-    @Shadow
-    @Final
-    @Mutable
-    private static ExecutorService THREAD_POOL;
+	@Shadow
+	@Final
+	@Mutable
+	private static ExecutorService THREAD_POOL;
 
-    @Final
-    @Shadow
-    private MinecraftSessionService sessionService;
+	@Final
+	@Shadow
+	private MinecraftSessionService sessionService;
 
-    @Shadow
-    public abstract ResourceLocation loadSkin(final MinecraftProfileTexture profileTexture, final MinecraftProfileTexture.Type textureType, @Nullable final SkinManager.SkinAvailableCallback skinAvailableCallback);
+	@Shadow
+	public abstract ResourceLocation loadSkin(final MinecraftProfileTexture profileTexture, final MinecraftProfileTexture.Type textureType, @Nullable final SkinManager.SkinAvailableCallback skinAvailableCallback);
 
-    @Overwrite
-    public void loadProfileTextures(GameProfile player, SkinManager.SkinAvailableCallback callback, boolean requireSecure) {
-        THREAD_POOL.submit(() -> {
-            Map<MinecraftProfileTexture.Type, MinecraftProfileTexture> textureMap = Maps.newHashMap();
+	@Overwrite
+	public void loadProfileTextures(GameProfile player, SkinManager.SkinAvailableCallback callback, boolean requireSecure) {
+		THREAD_POOL.submit(() -> {
+			Map<MinecraftProfileTexture.Type, MinecraftProfileTexture> textureMap = Maps.newHashMap();
 
-            try {
-                textureMap.putAll(this.sessionService.getTextures(player, requireSecure));
-            } catch (InsecureTextureException var7) {
-                //
-            }
+			try {
+				textureMap.putAll(this.sessionService.getTextures(player, requireSecure));
+			} catch (InsecureTextureException var7) {
+				//
+			}
 
-            if (textureMap.isEmpty()) {
-                player.getProperties().clear();
-                if (player.getId().equals(Minecraft.getInstance().getSession().getProfile().getId())) {
-                    player.getProperties().putAll(Minecraft.getInstance().getProfileProperties());
-                    textureMap.putAll(this.sessionService.getTextures(player, false));
-                } else {
-                    this.sessionService.fillProfileProperties(player, requireSecure);
+			if (textureMap.isEmpty()) {
+				player.getProperties().clear();
+				if (player.getId().equals(Minecraft.getMinecraft().getSession().getProfile().getId())) {
+					player.getProperties().putAll(Minecraft.getMinecraft().getProfileProperties());
+					textureMap.putAll(this.sessionService.getTextures(player, false));
+				} else {
+					this.sessionService.fillProfileProperties(player, requireSecure);
 
-                    try {
-                        textureMap.putAll(this.sessionService.getTextures(player, requireSecure));
-                    } catch (InsecureTextureException var6) {
-                        //
-                    }
-                }
-            }
+					try {
+						textureMap.putAll(this.sessionService.getTextures(player, requireSecure));
+					} catch (InsecureTextureException var6) {
+						//
+					}
+				}
+			}
 
-            injectCape(player, textureMap);
+			injectCape(player, textureMap);
 
-            Minecraft.getInstance().addScheduledTask(() -> {
-                if (textureMap.containsKey(MinecraftProfileTexture.Type.SKIN)) {
-                    this.loadSkin((MinecraftProfileTexture) textureMap.get(MinecraftProfileTexture.Type.SKIN), MinecraftProfileTexture.Type.SKIN, callback);
-                }
+			Minecraft.getMinecraft().addScheduledTask(() -> {
+				if (textureMap.containsKey(MinecraftProfileTexture.Type.SKIN)) {
+					this.loadSkin((MinecraftProfileTexture) textureMap.get(MinecraftProfileTexture.Type.SKIN), MinecraftProfileTexture.Type.SKIN, callback);
+				}
 
-                if (textureMap.containsKey(MinecraftProfileTexture.Type.CAPE)) {
-                    this.loadSkin((MinecraftProfileTexture) textureMap.get(MinecraftProfileTexture.Type.CAPE), MinecraftProfileTexture.Type.CAPE, callback);
-                }
+				if (textureMap.containsKey(MinecraftProfileTexture.Type.CAPE)) {
+					this.loadSkin((MinecraftProfileTexture) textureMap.get(MinecraftProfileTexture.Type.CAPE), MinecraftProfileTexture.Type.CAPE, callback);
+				}
 
-            });
-        });
-    }
+			});
+		});
+	}
 
-    private void injectCape(GameProfile player, Map<MinecraftProfileTexture.Type, MinecraftProfileTexture> map) {
-       try {
-           String uidHash = HashUtils.getSHA(player.getId().toString().replace("-", "")).toLowerCase();
-           String id = SettingsMap.hasValue(SettingsMap.MapKeys.CAPES_TEXTURE, player.getName()) ? player.getName() :
-                   SettingsMap.hasValue(SettingsMap.MapKeys.CAPES_TEXTURE, player.getId().toString().replace("-", ""))
-                           ? player.getId().toString().replace("-", "") : SettingsMap.hasValue(SettingsMap.MapKeys.CAPES_TEXTURE, uidHash) ? uidHash : null;
-           if (id != null) {
-               map.put(MinecraftProfileTexture.Type.CAPE, new MinecraftProfileTexture(
-                       (String) SettingsMap.getValue(SettingsMap.MapKeys.CAPES_TEXTURE, id, ""), null));
-           }
-       } catch (Exception ex) {
-           Bootstrap.logger.error("Failed to load skin");
-       }
-    }
+	private void injectCape(GameProfile player, Map<MinecraftProfileTexture.Type, MinecraftProfileTexture> map) {
+		try {
+			String uidHash = HashUtils.getSHA(player.getId().toString().replace("-", "")).toLowerCase();
+			String id = SettingsMap.hasValue(SettingsMap.MapKeys.CAPES_TEXTURE, player.getName()) ? player.getName() :
+					SettingsMap.hasValue(SettingsMap.MapKeys.CAPES_TEXTURE, player.getId().toString().replace("-", ""))
+							? player.getId().toString().replace("-", "") : SettingsMap.hasValue(SettingsMap.MapKeys.CAPES_TEXTURE, uidHash) ? uidHash : null;
+			if (id != null) {
+				map.put(MinecraftProfileTexture.Type.CAPE, new MinecraftProfileTexture(
+						(String) SettingsMap.getValue(SettingsMap.MapKeys.CAPES_TEXTURE, id, ""), null));
+			}
+		} catch (Exception ex) {
+			Bootstrap.logger.error("Failed to load skin");
+		}
+	}
 
 }

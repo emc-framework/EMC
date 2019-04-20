@@ -7,12 +7,12 @@ import net.minecraft.client.Minecraft;
 public class ITimer {
 
 	public static double getMinecraftTimerSpeed() {
-		IMixinTimer timer = (IMixinTimer) ((IMixinMinecraft) Minecraft.getInstance()).getTimer();
+		IMixinTimer timer = (IMixinTimer) ((IMixinMinecraft) Minecraft.getMinecraft()).getTimer();
 		return timer.getTimerSpeed();
 	}
 
 	public static void setMinecraftTimerSpeed(float speed) {
-		IMixinTimer timer = (IMixinTimer) ((IMixinMinecraft) Minecraft.getInstance()).getTimer();
+		IMixinTimer timer = (IMixinTimer) ((IMixinMinecraft) Minecraft.getMinecraft()).getTimer();
 		timer.setTimerSpeed(speed);
 	}
 

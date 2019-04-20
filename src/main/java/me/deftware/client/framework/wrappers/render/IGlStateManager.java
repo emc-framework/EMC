@@ -1,9 +1,10 @@
 package me.deftware.client.framework.wrappers.render;
 
-import net.minecraft.client.renderer.GlStateManager;
+import java.nio.FloatBuffer;
+
 import org.lwjgl.opengl.GL11;
 
-import java.nio.FloatBuffer;
+import net.minecraft.client.renderer.GlStateManager;
 
 public class IGlStateManager {
 
@@ -32,7 +33,7 @@ public class IGlStateManager {
 	}
 
 	public static void color(float colorRed, float colorGreen, float colorBlue) {
-		GlStateManager.color4f(colorRed, colorGreen, colorBlue, 1.0F);
+		GlStateManager.color(colorRed, colorGreen, colorBlue, 1.0F);
 	}
 
 	public static void resetColor() {
@@ -48,11 +49,11 @@ public class IGlStateManager {
 	}
 
 	public static void enableDepth() {
-		GlStateManager.enableDepthTest();
+		GlStateManager.enableDepth();
 	}
 
 	public static void disableDepth() {
-		GlStateManager.disableDepthTest();
+		GlStateManager.disableDepth();
 	}
 
 	public static void disableLighting() {
@@ -68,7 +69,7 @@ public class IGlStateManager {
 	}
 
 	public static void tryBlendFuncSeparate(int srcFactor, int dstFactor, int srcFactorAlpha, int dstFactorAlpha) {
-		GlStateManager.blendFuncSeparate(srcFactor, dstFactor, srcFactorAlpha, dstFactorAlpha);
+		GlStateManager.tryBlendFuncSeparate(srcFactor, dstFactor, srcFactorAlpha, dstFactorAlpha);
 	}
 
 	public static void enableTexture2D() {
@@ -96,15 +97,15 @@ public class IGlStateManager {
 	}
 
 	public static void doPolygonOffset(float f, float g) {
-		GlStateManager.polygonOffset(f, g);
+		GlStateManager.doPolygonOffset(f, g);
 	}
 
 	public static void disableAlpha() {
-		GlStateManager.disableAlphaTest();
+		GlStateManager.disableAlpha();
 	}
 
 	public static void enableAlpha() {
-		GlStateManager.enableAlphaTest();
+		GlStateManager.enableAlpha();
 	}
 
 	public static void enablePolygonOffset() {

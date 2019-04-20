@@ -82,7 +82,7 @@ public class MixinGuiTextField implements IMixinGuiTextField {
 	}
 
 
-	@Inject(method = "drawTextField", at = @At("HEAD"))
+	@Inject(method = "func_195608_a", at = @At("HEAD"))
 	public void drawTextField(int p_drawTextField_1_, int p_drawTextField_2_, float p_drawTextField_3_, CallbackInfo ci) {
 		if (!useMinecraftScaling) {
 			GL11.glPushMatrix();
@@ -90,14 +90,14 @@ public class MixinGuiTextField implements IMixinGuiTextField {
 		}
 	}
 
-	@Inject(method = "drawTextField", at = @At("RETURN"))
+	@Inject(method = "func_195608_a", at = @At("RETURN"))
 	public void drawTextFieldReturn(int p_drawTextField_1_, int p_drawTextField_2_, float p_drawTextField_3_, CallbackInfo ci) {
 		if (!useMinecraftScaling) {
 			GL11.glPopMatrix();
 		}
 	}
 
-	@Redirect(method = "drawTextField", at = @At(value = "INVOKE", target = "net/minecraft/client/gui/FontRenderer.drawStringWithShadow(Ljava/lang/String;FFI)I"))
+	@Redirect(method = "func_195608_a", at = @At(value = "INVOKE", target = "net/minecraft/client/gui/FontRenderer.drawStringWithShadow(Ljava/lang/String;FFI)I"))
 	public int onDrawText(FontRenderer self, String text, float x, float y, int color) {
 		if (useCustomFont) {
 			customFont.drawStringWithShadow((int) x, (int) y - 6, text, new Color(color));

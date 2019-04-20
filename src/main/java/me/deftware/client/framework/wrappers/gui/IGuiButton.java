@@ -13,27 +13,19 @@ public class IGuiButton extends GuiButton implements CustomIGuiEventListener {
 		super(buttonId, x, y, widthIn, heightIn, buttonText);
 	}
 
-	public void setText(String text) {
-		displayString = text;
-	}
-
-	public String getText() {
-		return displayString;
-	}
-
 	@Override
-	public void render(int mouseX, int mouseY, float partialTicks) {
+	public void func_194828_a(int mouseX, int mouseY, float partialTicks) {
 		if (onDraw(mouseX, mouseY) == 0) {
-			super.render(mouseX, mouseY, partialTicks);
+			super.func_194828_a(mouseX, mouseY, partialTicks);
 		}
 	}
 
 	public void drawCenteredString(String text, int x, int y, int color) {
-		Minecraft.getInstance().fontRenderer.drawStringWithShadow(text, x - Minecraft.getInstance().fontRenderer.getStringWidth(text) / 2, y, color);
+		Minecraft.getMinecraft().fontRenderer.drawStringWithShadow(text, x - Minecraft.getMinecraft().fontRenderer.getStringWidth(text) / 2, y, color);
 	}
 
 	@Override
-	public void onClick(double x, double y) {
+	public void mouseClicked(double x, double y) {
 		onButtonClick(x, y);
 	}
 
@@ -98,6 +90,14 @@ public class IGuiButton extends GuiButton implements CustomIGuiEventListener {
 
 	protected void setButtonHovered(boolean state) {
 		hovered = state;
+	}
+
+	public void setButtonText(String text) {
+		displayString = text;
+	}
+
+	public String getButtonText() {
+		return displayString;
 	}
 
 }

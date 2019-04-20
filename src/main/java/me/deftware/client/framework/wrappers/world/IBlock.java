@@ -12,7 +12,7 @@ public class IBlock {
 	protected Block block;
 
 	public IBlock(String name) {
-		block = getBlockFromName(name);
+		block = Block.getBlockFromName(name);
 	}
 
 	public IBlock(Block block) {
@@ -32,7 +32,7 @@ public class IBlock {
 	}
 
 	public int getID() {
-		return IRegistry.BLOCK.getId(block);
+		return Block.REGISTRY.getIDForObject(block);
 	}
 
 	public String getLocalizedName() {
@@ -48,7 +48,7 @@ public class IBlock {
 	}
 
 	public static boolean isValidBlock(String name) {
-		return getBlockFromName(name) != null;
+		return Block.getBlockFromName(name) != null;
 	}
 
 	public static boolean isReplaceable(IBlockPos pos) {
@@ -84,19 +84,6 @@ public class IBlock {
 
 		// Specific blocks
 		BlockPumpkin, BlockMelon, BlockReed, BlockCactus, BlockNetherWart, BlockFarmland, BlockSoulSand
-	}
-
-	/*
-	 * Block specific functions
-	 */
-
-	@Nullable
-	private static Block getBlockFromName(String p_getBlockFromName_0_) {
-		ResourceLocation lvt_1_1_ = new ResourceLocation(p_getBlockFromName_0_);
-		if (IRegistry.BLOCK.containsKey(lvt_1_1_)) {
-			return IRegistry.BLOCK.get(lvt_1_1_);
-		}
-		return null;
 	}
 
 }

@@ -1,6 +1,6 @@
 package me.deftware.client.framework.fonts;
 
-import me.deftware.client.framework.utils.render.GraphicsUtil;
+import me.deftware.client.framework.utils.render.TexUtil;
 import me.deftware.client.framework.utils.render.Texture;
 import org.lwjgl.opengl.GL11;
 
@@ -21,7 +21,7 @@ public class DynamicFont implements EMCFont {
     protected boolean italics;
     protected boolean underlined;
     protected boolean striked;
-    protected boolean moving;
+    protected boolean scaling;
     protected boolean antialiased;
     protected boolean memorysaving;
     protected java.awt.Font stdFont;
@@ -36,7 +36,7 @@ public class DynamicFont implements EMCFont {
         this.italics = ((modifiers & 2) != 0);
         this.underlined = ((modifiers & 4) != 0);
         this.striked = ((modifiers & 8) != 0);
-        this.moving = ((modifiers & 16) != 0);
+        this.scaling = ((modifiers & 16) != 0);
         this.antialiased = ((modifiers & 32) != 0);
         this.memorysaving = ((modifiers & 64) != 0);
 
@@ -47,7 +47,7 @@ public class DynamicFont implements EMCFont {
         lastRenderedHeight = 0;
     }
 
-    protected void prepareStandardFont(){
+    protected void prepareStandardFont() {
         if (!bold && !italics) {
             this.stdFont = new java.awt.Font(fontName, java.awt.Font.PLAIN, fontSize);
         } else {
@@ -113,7 +113,7 @@ public class DynamicFont implements EMCFont {
     @Override
     public int drawString(int x, int y, String text, Color color) {
         generateString(text, color);
-        drawOnScreen(x-1, y);
+        drawOnScreen(x - 1, y);
         return 0;
     }
 
@@ -159,11 +159,7 @@ public class DynamicFont implements EMCFont {
 
     @Override
     public int drawOnScreen(int x, int y) {
-        GL11.glPushMatrix();
-        GraphicsUtil.prepareMatrix(getLastRenderedWidth(), getLastRenderedHeight());
-        prepareForRendering(); //BINDING
-        GraphicsUtil.drawQuads(x,y, getLastRenderedWidth(), getLastRenderedHeight());
-        GL11.glPopMatrix();
+
         return 0;
     }
 
@@ -276,13 +272,8 @@ public class DynamicFont implements EMCFont {
     }
 
     @Override
-    public boolean isMoving() {
-        return moving;
-    }
-
-    @Override
-    public void setMoving(boolean moving) {
-        this.moving = moving;
+    public void setScaled(boolean state) {
+        scaling = state;
     }
 
     @Override

@@ -1,11 +1,9 @@
 package me.deftware.client.framework.main;
 
-import com.google.gson.Gson;
-import com.google.gson.JsonObject;
+import com.google.gson.*;
 import com.mojang.brigadier.tree.CommandNode;
 import com.mojang.brigadier.tree.RootCommandNode;
 import me.deftware.client.framework.FrameworkConstants;
-import me.deftware.client.framework.apis.marketplace.MarketplaceAPI;
 import me.deftware.client.framework.command.CommandRegister;
 import me.deftware.client.framework.command.commands.*;
 import me.deftware.client.framework.maps.SettingsMap;
@@ -20,8 +18,13 @@ import org.apache.logging.log4j.Logger;
 import java.io.BufferedReader;
 import java.io.File;
 import java.io.InputStreamReader;
+import java.io.PrintWriter;
+import java.lang.ref.WeakReference;
 import java.net.URL;
 import java.net.URLClassLoader;
+import java.nio.charset.StandardCharsets;
+import java.nio.file.Files;
+import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Enumeration;
@@ -37,6 +40,7 @@ import java.util.stream.Collectors;
  */
 public class Bootstrap {
 
+    public static final Runtime runtime = Runtime.getRuntime();
     public static Logger logger = LogManager.getLogger();
     public static ArrayList<JsonObject> modsInfo = new ArrayList<>();
     public static ArrayList<String> internalModClassNames = new ArrayList<>();
@@ -61,6 +65,12 @@ public class Bootstrap {
                 emc_root.mkdir();
             }
 
+            // Settings
+            EMCSettings = new Settings();
+            EMCSettings.initialize(null);
+            SettingsMap.update(SettingsMap.MapKeys.EMC_SETTINGS, "RENDER_SCALE", EMCSettings.getFloat("RENDER_SCALE", 1.0f));
+            SettingsMap.update(SettingsMap.MapKeys.EMC_SETTINGS, "COMMAND_TRIGGER", EMCSettings.getString("commandtrigger", "."));
+
             // Load all EMC mods
             Arrays.stream(emc_root.listFiles()).forEach((file) -> {
                 if (!file.isDirectory() && file.getName().endsWith(".jar")) {
@@ -70,12 +80,12 @@ public class Bootstrap {
                             new File(file.getAbsolutePath() + ".delete").delete();
                         } else {
                             // Update check
-                            File udpateJar = new File(emc_root.getAbsolutePath() + File.separator
+                            File updateJar = new File(emc_root.getAbsolutePath() + File.separator
                                     + file.getName().substring(0, file.getName().length() - ".jar".length())
                                     + "_update.jar");
-                            if (udpateJar.exists()) {
+                            if (updateJar.exists()) {
                                 file.delete();
-                                udpateJar.renameTo(file);
+                                updateJar.renameTo(file);
                             }
                             // Load the mod
                             Bootstrap.loadMod(file);
@@ -87,16 +97,8 @@ public class Bootstrap {
                 }
             });
 
-            EMCSettings = new Settings();
-            EMCSettings.initialize(null);
-
             // Register default EMC commands
             registerFrameworkCommands();
-
-            SettingsMap.update(SettingsMap.MapKeys.EMC_SETTINGS, "COMMAND_TRIGGER", EMCSettings.getString("commandtrigger", "."));
-
-            // Initialize the EMC marketplace API
-            MarketplaceAPI.init((status) -> Bootstrap.mods.forEach((name, mod) -> mod.onMarketplaceAuth(status)));
         } catch (Exception ex) {
             Bootstrap.logger.warn("Failed to load EMC", ex);
         }
@@ -113,6 +115,7 @@ public class Bootstrap {
         CommandRegister.registerCommand(new CommandOAuth());
         CommandRegister.registerCommand(new CommandTrigger());
         CommandRegister.registerCommand(new CommandReload());
+        CommandRegister.registerCommand(new CommandScale());
     }
 
     /**
@@ -143,8 +146,11 @@ public class Bootstrap {
                 "by " + jsonObject.get("author").getAsString());
 
         // Version check
-        if (jsonObject.get("minversion").getAsDouble() > FrameworkConstants.VERSION) {
-            Minecraft.getInstance().displayGuiScreen(new GuiUpdateLoader(jsonObject));
+        String[] minVersion = (jsonObject.has("minVersion") ? jsonObject.get("minVersion").getAsString() : String.format("%s.%s", FrameworkConstants.VERSION, FrameworkConstants.PATCH)).split("\\.");
+        double version = Double.valueOf(String.format("%s.%s", minVersion[0], minVersion[1]));
+        int patch = Integer.valueOf(minVersion[2]);
+        if (version >= FrameworkConstants.VERSION && patch > FrameworkConstants.PATCH) {
+            Minecraft.getMinecraft().displayGuiScreen(new GuiUpdateLoader(jsonObject));
             jarFile.close();
             return;
         }
@@ -158,7 +164,8 @@ public class Bootstrap {
                 continue;
             }
             String className = je.getName().replace(".class", "").replace('/', '.');
-            Bootstrap.logger.info("Loaded class " + Bootstrap.modClassLoader.loadClass(className).getName());
+            WeakReference<Class> c = new WeakReference<>(Bootstrap.modClassLoader.loadClass(className));
+            Bootstrap.logger.info("Loaded class " + c.get().getName());
         }
 
         jarFile.close();
@@ -174,9 +181,9 @@ public class Bootstrap {
      * @param method The method name you want to call
      * @param caller The name of your mod
      */
-    public static void callMethod(String mod, String method, String caller) {
+    public static void callMethod(String mod, String method, String caller, Object object) {
         if (Bootstrap.mods.containsKey(mod)) {
-            Bootstrap.mods.get(mod).callMethod(method, caller);
+            Bootstrap.mods.get(mod).callMethod(method, caller, object);
         } else {
             Bootstrap.logger.error(String.format("EMC mod %s tried to call method %s in mod %s", caller, method, mod));
         }
@@ -218,6 +225,32 @@ public class Bootstrap {
             clearChildren(child);
         }
         commandNode.getChildren().clear();
+    }
+
+    @SuppressWarnings("Duplicates")
+    public static void changeVersion(String newVersion) throws Exception {
+        File jsonFile = new File(OSUtils.getRunningFolder() + OSUtils.getVersion() + ".json");
+        if (!jsonFile.exists()) {
+            System.err.println("Could not find json file!");
+        } else {
+            JsonObject jsonObject = new Gson().fromJson(String.join("", Files.readAllLines(Paths.get(jsonFile.getAbsolutePath()), StandardCharsets.UTF_8)), JsonObject.class);
+            JsonArray array = jsonObject.get("libraries").getAsJsonArray();
+            array.forEach(jsonElement -> {
+                JsonObject entry = jsonElement.getAsJsonObject();
+                if (entry.get("name").getAsString().contains("me.deftware:EMC")) {
+                    String[] current = entry.get("name").getAsString().split(":");
+                    entry.addProperty("name", "me.deftware:" + current[1] + ":" + newVersion);
+                }
+            });
+            // Save
+            Gson gson = new GsonBuilder().setPrettyPrinting().create();
+            JsonParser jp = new JsonParser();
+            JsonElement je = jp.parse(jsonObject.toString());
+            String jsonContent = gson.toJson(je);
+            PrintWriter writer = new PrintWriter(jsonFile.getAbsolutePath(), "UTF-8");
+            writer.println(jsonContent);
+            writer.close();
+        }
     }
 
 }

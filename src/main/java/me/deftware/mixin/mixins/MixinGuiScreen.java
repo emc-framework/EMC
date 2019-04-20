@@ -28,50 +28,57 @@ import java.util.List;
 @Mixin(GuiScreen.class)
 public class MixinGuiScreen implements IMixinGuiScreen {
 
-    @Shadow
-    protected FontRenderer fontRenderer;
-    @Shadow
-    private List<GuiButton> buttons;
-    @Shadow
-    @Final
-    private List<IGuiEventListener> children;
+	public boolean shouldSendPostRenderEvent = true;
 
-    @Override
-    public List<GuiButton> getButtonList() {
-        return buttons;
-    }
+	@Shadow
+	private List<GuiButton> buttonList;
 
-    @Override
-    public FontRenderer getFontRenderer() {
-        return fontRenderer;
-    }
+	@Shadow
+	@Final
+	private List<IGuiEventListener> field_195124_j;
 
-    @Override
-    public List<IGuiEventListener> getEventList() {
-        return children;
-    }
+	@Shadow
+	protected FontRenderer fontRenderer;
 
-    @Inject(method = "render", at = @At("HEAD"))
-    public void render(int x, int y, float p_render_3_, CallbackInfo ci) {
-        new EventGuiScreenDraw((GuiScreen) (Object) this, x, y).send();
-    }
+	@Override
+	public List<GuiButton> getButtonList() {
+		return buttonList;
+	}
 
-    @Inject(method = "render", at = @At("RETURN"))
-    public void render_return(int x, int y, float p_render_3_, CallbackInfo ci) {
-        new EventGuiScreenPostDraw((GuiScreen) (Object) this, x, y).send();
-    }
+	@Override
+	public FontRenderer getFontRenderer() {
+		return fontRenderer;
+	}
 
-    @Overwrite
-    public List<String> getItemToolTip(ItemStack p_getItemToolTip_1_) {
-        List<ITextComponent> lvt_2_1_ = p_getItemToolTip_1_.getTooltip(Minecraft.getInstance().player, Minecraft.getInstance().gameSettings.advancedItemTooltips ? ITooltipFlag.TooltipFlags.ADVANCED : ITooltipFlag.TooltipFlags.NORMAL);
-        List<String> lvt_3_1_ = Lists.newArrayList();
-        Iterator var4 = lvt_2_1_.iterator();
-        while (var4.hasNext()) {
-            ITextComponent lvt_5_1_ = (ITextComponent) var4.next();
-            lvt_3_1_.add(lvt_5_1_.getFormattedText());
-        }
-        EventGetItemToolTip event = new EventGetItemToolTip(lvt_3_1_, new IItem(p_getItemToolTip_1_.getItem())).send();
-        return event.getList();
-    }
+	@Override
+	public List<IGuiEventListener> getEventList() {
+		return field_195124_j;
+	}
+
+	@Inject(method = "drawScreen", at = @At("HEAD"))
+	public void render(int x, int y, float p_render_3_, CallbackInfo ci) {
+		new EventGuiScreenDraw((GuiScreen) (Object) this, x, y).broadcast();
+	}
+
+	@Inject(method = "drawScreen", at = @At("RETURN"))
+	public void render_return(int x, int y, float p_render_3_, CallbackInfo ci) {
+		if (shouldSendPostRenderEvent) {
+			new EventGuiScreenPostDraw((GuiScreen) (Object) this, x, y).broadcast();
+		}
+	}
+
+	@Overwrite
+	public List<String> getItemToolTip(ItemStack p_getItemToolTip_1_) {
+		List<ITextComponent> lvt_2_1_ = p_getItemToolTip_1_.getTooltip(Minecraft.getMinecraft().player, Minecraft.getMinecraft().gameSettings.advancedItemTooltips ? ITooltipFlag.TooltipFlags.ADVANCED : ITooltipFlag.TooltipFlags.NORMAL);
+		List<String> lvt_3_1_ = Lists.newArrayList();
+		Iterator var4 = lvt_2_1_.iterator();
+		while (var4.hasNext()) {
+			ITextComponent lvt_5_1_ = (ITextComponent) var4.next();
+			lvt_3_1_.add(lvt_5_1_.getFormattedText());
+		}
+		EventGetItemToolTip event = new EventGetItemToolTip(lvt_3_1_, new IItem(p_getItemToolTip_1_.getItem()));
+		event.broadcast();
+		return event.getList();
+	}
 
 }

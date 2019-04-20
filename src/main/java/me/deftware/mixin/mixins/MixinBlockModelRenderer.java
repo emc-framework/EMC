@@ -1,14 +1,8 @@
 package me.deftware.mixin.mixins;
 
-import me.deftware.client.framework.maps.SettingsMap;
-import net.minecraft.block.state.IBlockState;
-import net.minecraft.client.renderer.BlockModelRenderer;
-import net.minecraft.client.renderer.BufferBuilder;
-import net.minecraft.client.renderer.model.BakedQuad;
-import net.minecraft.client.renderer.model.IBakedModel;
-import net.minecraft.util.EnumFacing;
-import net.minecraft.util.math.BlockPos;
-import net.minecraft.util.registry.IRegistry;
+import java.util.List;
+import java.util.Random;
+
 import net.minecraft.world.IWorldReader;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.Overwrite;
@@ -17,22 +11,29 @@ import org.spongepowered.asm.mixin.injection.At;
 import org.spongepowered.asm.mixin.injection.Inject;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfoReturnable;
 
-import java.util.List;
-import java.util.Random;
+import me.deftware.client.framework.maps.SettingsMap;
+import net.minecraft.block.Block;
+import net.minecraft.block.state.IBlockState;
+import net.minecraft.client.renderer.BlockModelRenderer;
+import net.minecraft.client.renderer.BufferBuilder;
+import net.minecraft.client.renderer.block.model.BakedQuad;
+import net.minecraft.client.renderer.block.model.IBakedModel;
+import net.minecraft.util.EnumFacing;
+import net.minecraft.util.math.BlockPos;
 
 @Mixin(BlockModelRenderer.class)
 public abstract class MixinBlockModelRenderer {
 
 	@Shadow
 	protected abstract void renderModelBrightnessColorQuads(float brightness, float red, float green, float blue,
-															List<BakedQuad> listQuads);
+			List<BakedQuad> listQuads);
 
-	@Inject(method = "renderModel", at = @At("HEAD"), cancellable = true)
-	private void renderModel(IWorldReader p_199324_1_, IBakedModel p_199324_2_, IBlockState p_199324_3_,
-							 BlockPos p_199324_4_, BufferBuilder p_199324_5_, boolean p_199324_6_, Random p_199324_7_,
-							 long p_199324_8_, CallbackInfoReturnable<Boolean> ci) {
+	@Inject(method = "func_199324_a", at = @At("HEAD"), cancellable = true)
+	private void func_199324_a(IWorldReader p_199324_1_, IBakedModel p_199324_2_, IBlockState p_199324_3_,
+							   BlockPos p_199324_4_, BufferBuilder p_199324_5_, boolean p_199324_6_, Random p_199324_7_,
+							   long p_199324_8_, CallbackInfoReturnable<Boolean> ci) {
 		if (SettingsMap.isOverrideMode()) {
-			if (!(boolean) SettingsMap.getValue(IRegistry.BLOCK.getId(p_199324_3_.getBlock()), "render", false)) {
+			if (!(boolean) SettingsMap.getValue(Block.REGISTRY.getIDForObject(p_199324_3_.getBlock()), "render", false)) {
 				ci.setReturnValue(false);
 			}
 		}
@@ -47,7 +48,7 @@ public abstract class MixinBlockModelRenderer {
 										   float p_187495_4_, float p_187495_5_, float p_187495_6_) {
 		if (state != null) {
 			try {
-				p_187495_3_ = (float) SettingsMap.getValue(IRegistry.BLOCK.getId(state.getBlock()),
+				p_187495_3_ = (float) SettingsMap.getValue(Block.REGISTRY.getIDForObject(state.getBlock()),
 						"lightValue", p_187495_3_);
 			} catch (Exception ex) {
 				ex.printStackTrace();
@@ -60,12 +61,12 @@ public abstract class MixinBlockModelRenderer {
 		for (EnumFacing enumfacing : EnumFacing.values()) {
 			random.setSeed(42L);
 			this.renderModelBrightnessColorQuads(p_187495_3_, p_187495_4_, p_187495_5_, p_187495_6_,
-					p_187495_2_.getQuads(state, enumfacing, random));
+					p_187495_2_.func_200117_a(state, enumfacing, random));
 		}
 
 		random.setSeed(42L);
 		this.renderModelBrightnessColorQuads(p_187495_3_, p_187495_4_, p_187495_5_, p_187495_6_,
-				p_187495_2_.getQuads(state, (EnumFacing) null, random));
+				p_187495_2_.func_200117_a(state, (EnumFacing) null, random));
 	}
 
 }

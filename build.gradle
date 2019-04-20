@@ -1,13 +1,14 @@
+import org.gradle.internal.os.OperatingSystem
+
 buildscript {
     repositories {
+        maven { url 'https://www.dimdev.org/maven/' }
         maven { url = 'http://repo.spongepowered.org/maven' }
         maven { url = 'https://plugins.gradle.org/m2/' }
-        maven { url 'https://www.jitpack.io' }
-        maven { url 'https://files.minecraftforge.net/maven' }
     }
 
     dependencies {
-        classpath 'com.github.Chocohead:ForgeGradle:moderniser-SNAPSHOT'
+        classpath "org.dimdev:ForgeGradle:${project.forgeGradleVersion}"
         classpath "org.spongepowered:mixingradle:${project.mixinGradleVersion}"
         classpath "com.github.jengelman.gradle.plugins:shadow:2.0.0"
     }
@@ -25,6 +26,11 @@ def getVersionFromJava() {
         }
     }
     return "${ver}.${patch}".toString()
+}
+
+def minecraftRoot = System.getenv('APPDATA') + "/.minecraft"
+if (OperatingSystem.current().isMacOsX()) {
+    minecraftRoot = System.getenv('HOME') + "/Library/Application Support/minecraft"
 }
 
 group = 'me.deftware'
@@ -51,7 +57,6 @@ repositories {
     maven { url = 'http://repo.spongepowered.org/maven/' }
     maven { url 'https://libraries.minecraft.net/' }
     maven { url 'https://www.dimdev.org/maven/' }
-    maven { url 'https://www.jitpack.io' }
 }
 
 configurations {
@@ -106,6 +111,14 @@ task generateApiDocumentation(type: Javadoc) {
   failOnError false
 }
 
+task copyToMinecraft(type: Copy) {
+    from "$rootDir/build/libs/EMC-${version}.jar"
+    into "${minecraftRoot}/libraries/me/deftware/EMC/${version}-${project.minecraftVersion}/"
+    rename { String fileName ->
+        fileName.replace(version, "${version}-${project.minecraftVersion}")
+    }
+}
+
 reobf {
     shadowJar {
         mappingType = 'NOTCH'
@@ -113,15 +126,6 @@ reobf {
     }
 }
 
-jar {
-    manifest.attributes(
-            "EMC-Version": version,
-            "EMC-ForgeBuild": false,
-            "Manifest-Version": 1.0
-    )
-}
-
-delete "$rootDir/build/libs"
 build.dependsOn(shadowJar)
 build.dependsOn(createPom)
 build.dependsOn(copyBuilds)

@@ -19,13 +19,13 @@ public class IScreens {
 		} else if (type.equals(Screen.WorldSelection)) {
 			screen = new GuiWorldSelection(parent);
 		} else if (type.equals(Screen.Options)) {
-			screen = new GuiOptions(parent, Minecraft.getInstance().gameSettings);
+			screen = new GuiOptions(parent, Minecraft.getMinecraft().gameSettings);
 		}
 		return screen;
 	}
 
 	public static void displayGuiScreen(Screen type, IGuiScreen parent) {
-		Minecraft.getInstance().displayGuiScreen(IScreens.translate(type, parent));
+		Minecraft.getMinecraft().displayGuiScreen(IScreens.translate(type, parent));
 	}
 
 	public static void switchToRealms(IGuiScreen parent) {

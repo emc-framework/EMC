@@ -19,12 +19,13 @@ public class MixinServerListEntryNormal {
 	@Shadow
 	private ServerData server;
 
-	@Inject(method = "drawEntry", at = @At("HEAD"))
+	@Inject(method = "func_194999_a", at = @At("HEAD"))
 	private void drawEntry(int p_194999_1_, int p_194999_2_, int p_194999_3_, int p_194999_4_, boolean p_194999_5_, float p_194999_6_, CallbackInfo ci) {
 		if (server.pingToServer > 1 && !sentEvent) {
 			sentEvent = true;
 			EventServerPinged event = new EventServerPinged(server.serverMOTD, server.playerList,
-					server.gameVersion, server.populationInfo, server.version, server.pingToServer).send();
+					server.gameVersion, server.populationInfo, server.version, server.pingToServer);
+			event.broadcast();
 			server.serverMOTD = event.getServerMOTD();
 			server.playerList = event.getPlayerList();
 			server.gameVersion = event.getGameVersion();

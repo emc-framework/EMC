@@ -17,7 +17,7 @@ public class IBlockNetherWart extends IBlock {
 	}
 
 	public int getAge(IBlockPos pos) {
-		return IWorld.getStateFromPos(pos).get(BlockNetherWart.AGE);
+		return IWorld.getStateFromPos(pos).getValue(BlockNetherWart.AGE);
 	}
 
 }

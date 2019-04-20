@@ -1,12 +1,14 @@
 package me.deftware.client.framework.wrappers;
 
 import me.deftware.client.framework.utils.ChatProcessor;
+import me.deftware.mixin.imp.IMixinGuiChat;
 import net.minecraft.client.Minecraft;
+import net.minecraft.client.gui.GuiChat;
 
 public class IChat {
 
 	public static void sendChatMessage(String message) {
-		Minecraft.getInstance().player.sendChatMessage(message);
+		Minecraft.getMinecraft().player.sendChatMessage(message);
 	}
 
 	public static void sendClientMessage(String message) {
@@ -18,7 +20,14 @@ public class IChat {
 	}
 
 	public static void clearMessages() {
-		Minecraft.getInstance().ingameGUI.getChatGUI().clearChatMessages(true);
+		Minecraft.getMinecraft().ingameGUI.getChatGUI().clearChatMessages(true);
+	}
+
+	public static String getCurrentChatText() {
+		if (Minecraft.getMinecraft().currentScreen instanceof GuiChat) {
+			return ((IMixinGuiChat) Minecraft.getMinecraft().currentScreen).getCurrentText();
+		}
+		return "";
 	}
 
 }

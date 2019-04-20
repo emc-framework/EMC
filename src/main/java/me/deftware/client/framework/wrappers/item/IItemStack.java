@@ -50,11 +50,11 @@ public class IItemStack {
 	}
 
 	public void setNBT(String nbt) throws Exception {
-		stack.setTag(JsonToNBT.getTagFromJson(nbt));
+		stack.setTagCompound(JsonToNBT.getTagFromJson(nbt));
 	}
 
 	public void enchantAll(int level) {
-		for (Object enchantment : IRegistry.ENCHANTMENT) {
+		for (Object enchantment : Enchantment.REGISTRY) {
 			if (enchantment != Enchantments.SILK_TOUCH && enchantment != Enchantments.BINDING_CURSE
 					&& enchantment != Enchantments.VANISHING_CURSE) {
 				stack.addEnchantment((Enchantment) enchantment, level);
@@ -62,8 +62,9 @@ public class IItemStack {
 		}
 	}
 
+
 	public static IItemStack read(INBTTagCompound compound) {
-		return new IItemStack(ItemStack.read(compound.getCompound()));
+		return new IItemStack(ItemStack.func_199557_a(compound.getCompound()));
 	}
 
 	public static IItemStack cloneWithoutEffects(IItemStack stack) {
@@ -72,8 +73,8 @@ public class IItemStack {
 	}
 
 	public void setStackDisplayName(String name) {
-		NBTTagCompound nbttagcompound = stack.getOrCreateChildTag("display");
-		nbttagcompound.putString("Name", ITextComponent.Serializer.toJson(new TextComponentString(name)));
+		NBTTagCompound nbttagcompound = stack.getOrCreateSubCompound("display");
+		nbttagcompound.setString("Name", ITextComponent.Serializer.componentToJson(new TextComponentString(name)));
 	}
 
 	public int getMaxStackSize() {
@@ -89,7 +90,15 @@ public class IItemStack {
 	}
 
 	public INBTTagCompound getTagCompound() {
-		return new INBTTagCompound(stack.getTag());
+		return new INBTTagCompound(stack.getTagCompound());
+	}
+
+	public boolean hasCompoundTag() {
+		return stack.hasTagCompound();
+	}
+
+	public void setTagInfo(String key, INBTTagList compound) {
+		stack.setTagInfo(key, compound.list);
 	}
 
 	public static boolean validName(String name) {
@@ -109,7 +118,7 @@ public class IItemStack {
 	}
 
 	public String getDisplayName() {
-		return stack.getDisplayName().getUnformattedComponentText();
+		return stack.func_200301_q().getUnformattedComponentText();
 	}
 
 	public int getItemID() {
@@ -117,7 +126,7 @@ public class IItemStack {
 	}
 
 	public float getStrVsBlock(IBlockPos pos) {
-		return stack.getDestroySpeed(Minecraft.getInstance().world.getBlockState(pos.getPos()));
+		return stack.getDestroySpeed(Minecraft.getMinecraft().world.getBlockState(pos.getPos()));
 	}
 
 	public boolean isEmpty() {

@@ -39,4 +39,5 @@ public class MixinPlayerControllerMP implements IMixinPlayerControllerMP {
 	public void setPlayerHittingBlock(boolean state) {
 		this.isHittingBlock = state;
 	}
+
 }

@@ -14,11 +14,11 @@ public class IPlayerController {
     }
 
     public static void windowClick(int windowID, int id, int next, IClickType type) {
-        Minecraft.getInstance().playerController.windowClick(windowID, id, next,
+        Minecraft.getMinecraft().playerController.windowClick(windowID, id, next,
                 type.equals(IClickType.THROW) ? ClickType.THROW :
                         type.equals(IClickType.QUICK_MOVE) ? ClickType.QUICK_MOVE :
                                 ClickType.PICKUP,
-                Minecraft.getInstance().player);
+                Minecraft.getMinecraft().player);
     }
 
     /**
@@ -26,8 +26,8 @@ public class IPlayerController {
      * returns -1 if the player does not have the item in their inventory
      */
     public static int getSlot(String name) {
-        InventoryPlayer in = Minecraft.getInstance().player.inventory;
-        for (int i = 0; i < in.mainInventory.size() + 1; i++) {
+        InventoryPlayer in = Minecraft.getMinecraft().player.inventory;
+        for (int i = 0; i < in.mainInventory.size(); i++) {
             ItemStack it = in.mainInventory.get(i);
             if (it.getItem().getTranslationKey().equals(name)) {
                 return i;
@@ -41,11 +41,11 @@ public class IPlayerController {
      */
     @SuppressWarnings("Duplicates")
     public static void swapStack(int one, int two, int windowId) {
-        Minecraft.getInstance().playerController.windowClick(windowId, one, 0, ClickType.SWAP,
-                Minecraft.getInstance().player);
-        Minecraft.getInstance().playerController.windowClick(windowId, two, 0, ClickType.SWAP,
-                Minecraft.getInstance().player);
-        Minecraft.getInstance().playerController.tick();
+        Minecraft.getMinecraft().playerController.windowClick(windowId, one, 0, ClickType.SWAP,
+                Minecraft.getMinecraft().player);
+        Minecraft.getMinecraft().playerController.windowClick(windowId, two, 0, ClickType.SWAP,
+                Minecraft.getMinecraft().player);
+        Minecraft.getMinecraft().playerController.updateController();
     }
 
     /**
@@ -53,35 +53,35 @@ public class IPlayerController {
      */
     @SuppressWarnings("Duplicates")
     public static void swapStack(int srcInventoryId, int dstInventoryId, int srcSlot, int dstSlot){
-        Minecraft.getInstance().playerController.windowClick(srcInventoryId, srcSlot, 0,
-                ClickType.SWAP, Minecraft.getInstance().player);
-        Minecraft.getInstance().playerController.windowClick(dstInventoryId, dstSlot, 0,
-                ClickType.SWAP, Minecraft.getInstance().player);
-        Minecraft.getInstance().playerController.tick();
+        Minecraft.getMinecraft().playerController.windowClick(srcInventoryId, srcSlot, 0,
+                ClickType.SWAP, Minecraft.getMinecraft().player);
+        Minecraft.getMinecraft().playerController.windowClick(dstInventoryId, dstSlot, 0,
+                ClickType.SWAP, Minecraft.getMinecraft().player);
+        Minecraft.getMinecraft().playerController.updateController();
     }
 
     public static void moveStack(int srcInventoryId, int dstInventoryId, int srcSlot, int dstSlot){
-        Minecraft.getInstance().playerController.windowClick(srcInventoryId, srcSlot, 0,
-                ClickType.QUICK_MOVE, Minecraft.getInstance().player);
-        Minecraft.getInstance().playerController.windowClick(dstInventoryId, dstSlot, 0,
-                ClickType.QUICK_MOVE, Minecraft.getInstance().player);
+        Minecraft.getMinecraft().playerController.windowClick(srcInventoryId, srcSlot, 0,
+                ClickType.QUICK_MOVE, Minecraft.getMinecraft().player);
+        Minecraft.getMinecraft().playerController.windowClick(dstInventoryId, dstSlot, 0,
+                ClickType.QUICK_MOVE, Minecraft.getMinecraft().player);
     }
 
     public static void moveItem(int slotId) {
-        Minecraft.getInstance().playerController.windowClick(0, slotId, 0, ClickType.QUICK_MOVE,
-                Minecraft.getInstance().player);
+        Minecraft.getMinecraft().playerController.windowClick(0, slotId, 0, ClickType.QUICK_MOVE,
+                Minecraft.getMinecraft().player);
     }
 
     public static void processRightClick(boolean offhand) {
-        Minecraft.getInstance().playerController.processRightClick(Minecraft.getInstance().player, Minecraft.getInstance().world, offhand ? EnumHand.OFF_HAND : EnumHand.MAIN_HAND);
+        Minecraft.getMinecraft().playerController.processRightClick(Minecraft.getMinecraft().player, Minecraft.getMinecraft().world, offhand ? EnumHand.OFF_HAND : EnumHand.MAIN_HAND);
     }
 
     public static void resetBlockRemoving() {
-        Minecraft.getInstance().playerController.resetBlockRemoving();
+        Minecraft.getMinecraft().playerController.resetBlockRemoving();
     }
 
     public static void setPlayerHittingBlock(boolean state) {
-        ((IMixinPlayerControllerMP) Minecraft.getInstance().playerController).setPlayerHittingBlock(state);
+        ((IMixinPlayerControllerMP) Minecraft.getMinecraft().playerController).setPlayerHittingBlock(state);
     }
 
     public enum IClickType {

@@ -1,7 +1,7 @@
 package me.deftware.mixin.mixins;
 
-import me.deftware.client.framework.event.events.EventAnimation;
 import me.deftware.client.framework.event.events.EventKnockback;
+import me.deftware.client.framework.event.events.EventAnimation;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.network.NetHandlerPlayClient;
 import net.minecraft.entity.Entity;
@@ -25,7 +25,8 @@ public class MixinNetHandlerPlayClient {
 	@Inject(method = "handleEntityStatus", at = @At("HEAD"), cancellable = true)
 	public void handleEntityStatus(SPacketEntityStatus packetIn, CallbackInfo ci) {
 		if (packetIn.getOpCode() == 35) {
-			EventAnimation event = new EventAnimation(EventAnimation.AnimationType.Totem).send();
+			EventAnimation event = new EventAnimation(EventAnimation.AnimationType.Totem);
+			event.broadcast();
 			if (event.isCanceled()) {
 				ci.cancel();
 			}
@@ -42,7 +43,8 @@ public class MixinNetHandlerPlayClient {
 		Explosion explosion = new Explosion(client.world, (Entity) null, packetIn.getX(), packetIn.getY(),
 				packetIn.getZ(), packetIn.getStrength(), packetIn.getAffectedBlockPositions());
 		explosion.doExplosionB(true);
-		EventKnockback event = new EventKnockback(packetIn.getMotionX(), packetIn.getMotionY(), packetIn.getMotionZ()).send();
+		EventKnockback event = new EventKnockback(packetIn.getMotionX(), packetIn.getMotionY(), packetIn.getMotionZ());
+		event.broadcast();
 		if (event.isCanceled()) {
 			return;
 		}

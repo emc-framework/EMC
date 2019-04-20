@@ -6,7 +6,7 @@ import net.minecraft.util.MovementInput;
 public class IMovementInput {
 
 	private static MovementInput get() {
-		return Minecraft.getInstance().player.movementInput;
+		return Minecraft.getMinecraft().player.movementInput;
 	}
 
 	public static double getForward() {

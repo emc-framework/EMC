@@ -26,7 +26,7 @@ public class CommandBuilder<T> {
 	 * @return CommandBuilder
 	 */
 	public CommandBuilder addCommand(String command, CommandExecution execution) {
-		return set(Commands.literal(command).executes(source -> {
+		return set(Commands.literalArgument(command).executes(source -> {
 			execution.onExecute(new CommandResult(source));
 			return 1;
 		}));
@@ -75,7 +75,7 @@ public class CommandBuilder<T> {
 	 * @return
 	 */
 	public ArgumentType<T> getEntityArgumentType() {
-		return (ArgumentType<T>) EntityArgument.players();
+		return (ArgumentType<T>) EntityArgument.func_197094_d();
 	}
 
 	/**

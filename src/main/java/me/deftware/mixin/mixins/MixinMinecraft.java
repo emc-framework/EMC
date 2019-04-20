@@ -1,15 +1,10 @@
 package me.deftware.mixin.mixins;
 
-import me.deftware.client.framework.event.events.EventGuiScreenDisplay;
+import javax.annotation.Nullable;
+
 import me.deftware.client.framework.event.events.EventShutdown;
-import me.deftware.client.framework.main.Bootstrap;
-import me.deftware.mixin.imp.IMixinMinecraft;
+import net.minecraft.client.GameSettings;
 import net.minecraft.client.MainWindow;
-import net.minecraft.client.Minecraft;
-import net.minecraft.client.gui.GuiMainMenu;
-import net.minecraft.client.gui.GuiScreen;
-import net.minecraft.util.Session;
-import net.minecraft.util.Timer;
 import org.spongepowered.asm.mixin.Final;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.Mutable;
@@ -19,7 +14,14 @@ import org.spongepowered.asm.mixin.injection.Inject;
 import org.spongepowered.asm.mixin.injection.ModifyVariable;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 
-import javax.annotation.Nullable;
+import me.deftware.client.framework.event.events.EventGuiScreenDisplay;
+import me.deftware.client.framework.main.Bootstrap;
+import me.deftware.mixin.imp.IMixinMinecraft;
+import net.minecraft.client.Minecraft;
+import net.minecraft.client.gui.GuiMainMenu;
+import net.minecraft.client.gui.GuiScreen;
+import net.minecraft.util.Session;
+import net.minecraft.util.Timer;
 
 @Mixin(Minecraft.class)
 public abstract class MixinMinecraft implements IMixinMinecraft {
@@ -53,16 +55,21 @@ public abstract class MixinMinecraft implements IMixinMinecraft {
 	@Shadow
 	public abstract void middleClickMouse();
 
+	@Shadow
+	public boolean isWindowFocused;
+
 	@ModifyVariable(method = "displayGuiScreen", at = @At("HEAD"))
 	private GuiScreen displayGuiScreenModifier(GuiScreen screen) {
-		EventGuiScreenDisplay event = new EventGuiScreenDisplay(screen).send();
+		EventGuiScreenDisplay event = new EventGuiScreenDisplay(screen);
+		event.broadcast();
 		return event.isCanceled() ? null : event.getScreen();
 	}
 
 	@Inject(method = "runTick", at = @At("HEAD"))
 	private void runTick(CallbackInfo ci) {
-		if (Minecraft.getInstance().currentScreen instanceof GuiMainMenu) {
-			EventGuiScreenDisplay event = new EventGuiScreenDisplay(Minecraft.getInstance().currentScreen).send();
+		if (Minecraft.getMinecraft().currentScreen instanceof GuiMainMenu) {
+			EventGuiScreenDisplay event = new EventGuiScreenDisplay(Minecraft.getMinecraft().currentScreen);
+			event.broadcast();
 			if (!(event.getScreen() instanceof GuiMainMenu)) {
 				displayGuiScreen(event.getScreen());
 			}
@@ -71,7 +78,7 @@ public abstract class MixinMinecraft implements IMixinMinecraft {
 
 	@Inject(method = "shutdownMinecraftApplet", at = @At("HEAD"))
 	public void shutdownMinecraftApplet(CallbackInfo ci) {
-		new EventShutdown().send();
+		new EventShutdown().broadcast();
 		Bootstrap.isRunning = false;
 	}
 
@@ -117,7 +124,12 @@ public abstract class MixinMinecraft implements IMixinMinecraft {
 
 	@Override
 	public MainWindow getMainWindow() {
-		return Minecraft.getInstance().mainWindow;
+		return Minecraft.getMinecraft().mainWindow;
+	}
+
+	@Override
+	public boolean getIsWindowFocused() {
+		return isWindowFocused;
 	}
 
 }

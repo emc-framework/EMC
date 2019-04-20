@@ -1,13 +1,8 @@
 package me.deftware.mixin.mixins;
 
-import me.deftware.client.framework.event.events.EventKnockback;
-import me.deftware.client.framework.event.events.EventSlowdown;
-import me.deftware.client.framework.event.events.EventSneakingCheck;
+import static org.spongepowered.asm.lib.Opcodes.GETFIELD;
+
 import me.deftware.client.framework.maps.SettingsMap;
-import me.deftware.mixin.imp.IMixinEntity;
-import net.minecraft.client.entity.EntityPlayerSP;
-import net.minecraft.entity.Entity;
-import net.minecraft.util.math.AxisAlignedBB;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.Shadow;
 import org.spongepowered.asm.mixin.injection.At;
@@ -15,7 +10,13 @@ import org.spongepowered.asm.mixin.injection.Inject;
 import org.spongepowered.asm.mixin.injection.Redirect;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 
-import static org.spongepowered.asm.lib.Opcodes.GETFIELD;
+import me.deftware.client.framework.event.events.EventKnockback;
+import me.deftware.client.framework.event.events.EventSlowdown;
+import me.deftware.client.framework.event.events.EventSneakingCheck;
+import me.deftware.mixin.imp.IMixinEntity;
+import net.minecraft.client.entity.EntityPlayerSP;
+import net.minecraft.entity.Entity;
+import net.minecraft.util.math.AxisAlignedBB;
 
 @Mixin(Entity.class)
 public abstract class MixinEntity implements IMixinEntity {
@@ -84,10 +85,10 @@ public abstract class MixinEntity implements IMixinEntity {
 	public abstract boolean isSprinting();
 
 	@Shadow
-	public abstract boolean isPassenger();
+	public abstract boolean isRiding();
 
 	@Shadow
-	public abstract AxisAlignedBB getBoundingBox();
+	public abstract AxisAlignedBB getEntityBoundingBox();
 
 	@Shadow
 	public abstract boolean getFlag(int flag);
@@ -100,7 +101,8 @@ public abstract class MixinEntity implements IMixinEntity {
 
 	@Redirect(method = "move", at = @At(value = "FIELD", target = "Lnet/minecraft/entity/Entity;isInWeb:Z", opcode = GETFIELD))
 	private boolean webCheck(Entity self) {
-		EventSlowdown event = new EventSlowdown(EventSlowdown.SlowdownType.Web).send();
+		EventSlowdown event = new EventSlowdown(EventSlowdown.SlowdownType.Web);
+		event.broadcast();
 		if (event.isCanceled()) {
 			isInWeb = false;
 		}
@@ -109,7 +111,8 @@ public abstract class MixinEntity implements IMixinEntity {
 
 	@Redirect(method = "move", at = @At(value = "INVOKE", target = "net/minecraft/entity/Entity.isSneaking()Z", opcode = GETFIELD, ordinal = 0))
 	private boolean sneakingCheck(Entity self) {
-		EventSneakingCheck event = new EventSneakingCheck(isSneaking()).send();
+		EventSneakingCheck event = new EventSneakingCheck(isSneaking());
+		event.broadcast();
 		if (event.isSneaking()) {
 			return true;
 		}
@@ -118,7 +121,8 @@ public abstract class MixinEntity implements IMixinEntity {
 
 	@Inject(method = "setVelocity", at = @At("HEAD"), cancellable = true)
 	private void setVelocity(double x, double y, double z, CallbackInfo ci) {
-		EventKnockback event = new EventKnockback(x, y, z).send();
+		EventKnockback event = new EventKnockback(x, y, z);
+		event.broadcast();
 		if (event.isCanceled()) {
 			ci.cancel();
 		}
