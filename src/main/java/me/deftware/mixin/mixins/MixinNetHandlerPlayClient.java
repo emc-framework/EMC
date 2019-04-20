@@ -2,52 +2,49 @@ package me.deftware.mixin.mixins;
 
 import me.deftware.client.framework.event.events.EventAnimation;
 import me.deftware.client.framework.event.events.EventKnockback;
-import net.minecraft.client.Minecraft;
-import net.minecraft.client.network.NetHandlerPlayClient;
+import net.minecraft.client.MinecraftClient;
+import net.minecraft.client.network.ClientPlayNetworkHandler;
+import net.minecraft.client.network.ClientPlayerEntity;
+import net.minecraft.client.network.packet.EntityStatusS2CPacket;
+import net.minecraft.client.network.packet.ExplosionS2CPacket;
 import net.minecraft.entity.Entity;
-import net.minecraft.network.PacketThreadUtil;
-import net.minecraft.network.play.server.SPacketEntityStatus;
-import net.minecraft.network.play.server.SPacketExplosion;
-import net.minecraft.world.Explosion;
+import net.minecraft.network.NetworkThreadUtils;
+import net.minecraft.world.explosion.Explosion;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.Overwrite;
-import org.spongepowered.asm.mixin.Shadow;
 import org.spongepowered.asm.mixin.injection.At;
 import org.spongepowered.asm.mixin.injection.Inject;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 
-@Mixin(NetHandlerPlayClient.class)
+@Mixin(ClientPlayNetworkHandler.class)
 public class MixinNetHandlerPlayClient {
 
-	@Shadow
-	private Minecraft client;
+    @Inject(method = "onEntityStatus", at = @At("HEAD"), cancellable = true)
+    public void onEntityStatus(EntityStatusS2CPacket packetIn, CallbackInfo ci) {
+        if (packetIn.getStatus() == 35) {
+            EventAnimation event = new EventAnimation(EventAnimation.AnimationType.Totem);
+            event.broadcast();
+            if (event.isCanceled()) {
+                ci.cancel();
+            }
+        }
+    }
 
-	@Inject(method = "handleEntityStatus", at = @At("HEAD"), cancellable = true)
-	public void handleEntityStatus(SPacketEntityStatus packetIn, CallbackInfo ci) {
-		if (packetIn.getOpCode() == 35) {
-			EventAnimation event = new EventAnimation(EventAnimation.AnimationType.Totem).send();
-			if (event.isCanceled()) {
-				ci.cancel();
-			}
-		}
-	}
+    /**
+     * @Author Deftware
+     * @reason
+     */
+    @Overwrite
+    public void onExplosion(ExplosionS2CPacket explosionClientPacket_1) {
+        NetworkThreadUtils.forceMainThread(explosionClientPacket_1, (ClientPlayNetworkHandler) (Object) this, MinecraftClient.getInstance());
+        Explosion explosion_1 = new Explosion(MinecraftClient.getInstance().world, (Entity) null, explosionClientPacket_1.getX(), explosionClientPacket_1.getY(), explosionClientPacket_1.getZ(), explosionClientPacket_1.getRadius(), explosionClientPacket_1.getAffectedBlocks());
+        explosion_1.affectWorld(true);
+        EventKnockback event = new EventKnockback(explosionClientPacket_1.getPlayerVelocityX(), explosionClientPacket_1.getPlayerVelocityY(), explosionClientPacket_1.getPlayerVelocityZ());
+        event.broadcast();
+        if (event.isCanceled()) {
+            return;
+        }
+        MinecraftClient.getInstance().player.setVelocity(MinecraftClient.getInstance().player.getVelocity().add((double)explosionClientPacket_1.getPlayerVelocityX(), (double)explosionClientPacket_1.getPlayerVelocityY(), (double)explosionClientPacket_1.getPlayerVelocityZ()));
+    }
 
-	/**
-	 * @Author Deftware
-	 * @reason
-	 */
-	@Overwrite
-	public void handleExplosion(SPacketExplosion packetIn) {
-		PacketThreadUtil.checkThreadAndEnqueue(packetIn, (NetHandlerPlayClient) (Object) this, client);
-		Explosion explosion = new Explosion(client.world, (Entity) null, packetIn.getX(), packetIn.getY(),
-				packetIn.getZ(), packetIn.getStrength(), packetIn.getAffectedBlockPositions());
-		explosion.doExplosionB(true);
-		EventKnockback event = new EventKnockback(packetIn.getMotionX(), packetIn.getMotionY(), packetIn.getMotionZ()).send();
-		if (event.isCanceled()) {
-			return;
-		}
-		client.player.motionX += packetIn.getMotionX();
-		client.player.motionY += packetIn.getMotionY();
-		client.player.motionZ += packetIn.getMotionZ();
-	}
 }

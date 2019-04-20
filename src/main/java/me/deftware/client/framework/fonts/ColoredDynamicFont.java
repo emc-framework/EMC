@@ -4,7 +4,6 @@ import me.deftware.client.framework.utils.ChatColor;
 import me.deftware.client.framework.utils.render.ColorUtil;
 import me.deftware.client.framework.utils.render.Texture;
 
-import javax.annotation.Nonnull;
 import java.awt.*;
 import java.awt.image.BufferedImage;
 
@@ -12,7 +11,7 @@ import static me.deftware.client.framework.utils.ChatColor.COLOR_CHAR;
 
 public class ColoredDynamicFont extends DynamicFont {
 
-    public ColoredDynamicFont(@Nonnull String fontName, int fontSize, int modifiers) {
+    public ColoredDynamicFont(String fontName, int fontSize, int modifiers) {
         super(fontName, fontSize, modifiers);
     }
 
@@ -24,8 +23,8 @@ public class ColoredDynamicFont extends DynamicFont {
             return super.generateString(ChatColor.stripColor(text), color);
         }
         String key = text + color.getRGB() + bold + fontName;
-        int textwidth = getStringWidth(text);
-        int textheight = getStringHeight(text);
+        int textwidth = getStringWidthNonScaled(text);
+        int textheight = getStringHeightNonScaled(text);
         if (!memorysaving && textureStore.containsKey(key)) {
             textTexture = textureStore.get(key);
         } else {
@@ -54,7 +53,7 @@ public class ColoredDynamicFont extends DynamicFont {
                         // Next char will be a color code
                         skip = true;
                         if (!currentText.equals("")) {
-                            graphics.drawString(currentText, getStringWidth(drawnText) + 1, textheight - textheight / 4);
+                            graphics.drawString(currentText, getStringWidthNonScaled(drawnText) + 1, textheight - textheight / 4);
                             drawnText += currentText;
                         }
                     } else {
@@ -63,7 +62,7 @@ public class ColoredDynamicFont extends DynamicFont {
                 }
             }
             if (!currentText.equals("")) {
-                graphics.drawString(currentText, getStringWidth(drawnText) + 1, textheight - textheight / 4);
+                graphics.drawString(currentText, getStringWidthNonScaled(drawnText) + 1, textheight - textheight / 4);
             }
 
             graphics.dispose();
@@ -79,8 +78,8 @@ public class ColoredDynamicFont extends DynamicFont {
     }
 
     @Override
-    public int getStringWidth(String text){
-        return super.getStringWidth(ChatColor.stripColor(text));
+    public int getStringWidth(String text) {
+        return super.getStringWidthNonScaled(ChatColor.stripColor(text));
     }
 
 }

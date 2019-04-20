@@ -5,9 +5,9 @@ import me.deftware.client.framework.event.events.EventSlowdown;
 import me.deftware.client.framework.event.events.EventSneakingCheck;
 import me.deftware.client.framework.maps.SettingsMap;
 import me.deftware.mixin.imp.IMixinEntity;
-import net.minecraft.client.entity.EntityPlayerSP;
+import net.minecraft.client.network.ClientPlayerEntity;
 import net.minecraft.entity.Entity;
-import net.minecraft.util.math.AxisAlignedBB;
+import net.minecraft.util.math.BoundingBox;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.Shadow;
 import org.spongepowered.asm.mixin.injection.At;
@@ -20,113 +20,104 @@ import static org.spongepowered.asm.lib.Opcodes.GETFIELD;
 @Mixin(Entity.class)
 public abstract class MixinEntity implements IMixinEntity {
 
-	@Shadow
-	public boolean noClip;
+    @Shadow
+    public boolean noClip;
 
-	@Shadow
-	public boolean isInWeb;
+    @Shadow
+    public boolean onGround;
 
-	@Shadow
-	public boolean onGround;
+    @Shadow
+    public double x;
 
-	@Shadow
-	public double posX;
+    @Shadow
+    public double y;
 
-	@Shadow
-	public double posY;
+    @Shadow
+    public double z;
 
-	@Shadow
-	public double posZ;
+    @Shadow
+    public double prevX;
 
-	@Shadow
-	public double prevPosX;
+    @Shadow
+    public double prevY;
 
-	@Shadow
-	public double prevPosY;
+    @Shadow
+    public double prevZ;
 
-	@Shadow
-	public double prevPosZ;
+    @Shadow
+    public double prevRenderX;
 
-	@Shadow
-	public double lastTickPosX;
+    @Shadow
+    public double prevRenderY;
 
-	@Shadow
-	public double lastTickPosY;
+    @Shadow
+    public double prevRenderZ;
 
-	@Shadow
-	public double lastTickPosZ;
+    @Shadow
+    public float prevYaw;
 
-	@Shadow
-	public float prevRotationYaw;
+    @Shadow
+    public float prevPitch;
 
-	@Shadow
-	public float prevRotationPitch;
+    @Shadow
+    public float pitch;
 
-	@Shadow
-	public float rotationPitch;
+    @Shadow
+    public float yaw;
 
-	@Shadow
-	public float rotationYaw;
+    @Shadow
+    public abstract boolean isSneaking();
 
-	@Shadow
-	public double motionX;
+    @Shadow
+    public abstract boolean isSprinting();
 
-	@Shadow
-	public double motionY;
+    @Shadow
+    public abstract boolean hasVehicle();
 
-	@Shadow
-	public double motionZ;
+    @Shadow
+    public abstract BoundingBox getBoundingBox();
 
-	@Shadow
-	public abstract boolean isSneaking();
+    @Shadow
+    public abstract boolean getFlag(int int_1);
 
-	@Shadow
-	public abstract boolean isSprinting();
+    @Redirect(method = "move", at = @At(value = "FIELD", target = "Lnet/minecraft/entity/Entity;noClip:Z", opcode = GETFIELD))
+    private boolean noClipCheck(Entity self) {
+        boolean noClipCheck = (boolean) SettingsMap.getValue(SettingsMap.MapKeys.ENTITY_SETTINGS, "NOCLIP", false);
+        return noClip || noClipCheck && self instanceof ClientPlayerEntity;
+    }
 
-	@Shadow
-	public abstract boolean isPassenger();
+    /* Fix
+    @Redirect(method = "move", at = @At(value = "FIELD", target = "Lnet/minecraft/entity/Entity;applyMovementMultiplier:Z", opcode = GETFIELD))
+    private boolean webCheck(Entity self) {
+        EventSlowdown event = new EventSlowdown(EventSlowdown.SlowdownType.Web).send();
+        if (event.isCanceled()) {
+            applyMovementMultiplier = false;
+        }
+        return applyMovementMultiplier;
+    }*/
 
-	@Shadow
-	public abstract AxisAlignedBB getBoundingBox();
+    @Redirect(method = "move", at = @At(value = "INVOKE", target = "net/minecraft/entity/Entity.isSneaking()Z", opcode = GETFIELD, ordinal = 0))
+    private boolean sneakingCheck(Entity self) {
+        EventSneakingCheck event = new EventSneakingCheck(isSneaking());
+        event.broadcast();
+        if (event.isSneaking()) {
+            return true;
+        }
+        return getFlag(1);
+    }
 
-	@Shadow
-	public abstract boolean getFlag(int flag);
+    @Inject(method = "setVelocityClient", at = @At("HEAD"), cancellable = true)
+    public void setVelocityClient(double double_1, double double_2, double double_3, CallbackInfo ci) {
+        EventKnockback event = new EventKnockback(double_1, double_2, double_3);
+        event.broadcast();
+        if (event.isCanceled()) {
+            ci.cancel();
+        }
+    }
 
-	@Redirect(method = "move", at = @At(value = "FIELD", target = "Lnet/minecraft/entity/Entity;noClip:Z", opcode = GETFIELD))
-	private boolean noClipCheck(Entity self) {
-		boolean noClipCheck = (boolean) SettingsMap.getValue(SettingsMap.MapKeys.ENTITY_SETTINGS, "NOCLIP", false);
-		return noClip || noClipCheck && self instanceof EntityPlayerSP;
-	}
-
-	@Redirect(method = "move", at = @At(value = "FIELD", target = "Lnet/minecraft/entity/Entity;isInWeb:Z", opcode = GETFIELD))
-	private boolean webCheck(Entity self) {
-		EventSlowdown event = new EventSlowdown(EventSlowdown.SlowdownType.Web).send();
-		if (event.isCanceled()) {
-			isInWeb = false;
-		}
-		return isInWeb;
-	}
-
-	@Redirect(method = "move", at = @At(value = "INVOKE", target = "net/minecraft/entity/Entity.isSneaking()Z", opcode = GETFIELD, ordinal = 0))
-	private boolean sneakingCheck(Entity self) {
-		EventSneakingCheck event = new EventSneakingCheck(isSneaking()).send();
-		if (event.isSneaking()) {
-			return true;
-		}
-		return getFlag(1);
-	}
-
-	@Inject(method = "setVelocity", at = @At("HEAD"), cancellable = true)
-	private void setVelocity(double x, double y, double z, CallbackInfo ci) {
-		EventKnockback event = new EventKnockback(x, y, z).send();
-		if (event.isCanceled()) {
-			ci.cancel();
-		}
-	}
-
-	@Override
-	public boolean getAFlag(int flag) {
-		return getFlag(flag);
-	}
+    @Override
+    public boolean getAFlag(int flag) {
+        return getFlag(flag);
+    }
 
 }

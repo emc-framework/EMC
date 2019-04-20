@@ -4,16 +4,10 @@ The EMC (Easy Minecraft Client) Framework
 EMC (Easy Minecraft Client) is a framework for modifying Minecraft code without having to think about
 obfuscation as the framework will act as a middle man handling your calls to Minecraft.
 
-Unlike other mod loaders that require you to write your own Mixins to modify Minecraft code, EMC acts as an API that enables cross compatability with multiple Minecraft
+Unlike other mod loaders that require you to write your own Mixins to modify Minecraft code, EMC acts as an API that enables cross compatibility with multiple Minecraft
 versions and you don't have to write any Mixins on your own.
 
 This framework also allows you to write a mod once, then use it on Minecraft 1.12 and above.
-
-Discord
--------------------
-
-We now have an official Discord server for EMC related development, feel free to join us, [EMC Discord](https://discord.gg/jcPDsGT).
-
 
 How it works
 -------------------
@@ -55,27 +49,29 @@ public class UpdateListener extends EventListener {
 Minecraft versions currently supported
 -------------------
 
-* 19w06a
+* 1.14
 * 1.13.2
 * 1.13.1
 * 1.13
 * 1.12.2
 
-Loading EMC (1.13.2)
+Loading EMC (1.14)
 -------------------
+
+Some versions of EMC are loaded differently and use a small library to load, these builds are appended with an F, such as `EMC-F` for the 1.14 version of EMC.
 
 Minecraft uses Maven to download dependencies, EMC is loaded as a dependency. To load EMC in Minecraft add the following in the `libraries` array to your Minecraft json file:
 
 ```
 {
-	"name": "me.deftware:EMC:13.7.5-1.13.2",
+	"name": "me.deftware:EMC-F:13.8.7-1.14",
 	"url": "https://gitlab.com/EMC-Framework/maven/raw/master/"
 }
 ```
 
-Then in the `arguments->game` array add `"--tweakClass", "me.deftware.launch.Launcher"` at the end. If you want to see an example on how to load EMC see [example_client.json](https://gitlab.com/EMC-Framework/EMC/blob/1.13.2/example_client.json)
+Then change `mainClass` to `net.fabricmc.loader.launch.knot.KnotClient`. If you want to see an example on how to load EMC see [example_client.json](https://gitlab.com/EMC-Framework/EMC/blob/1.14/example_client.json)
 
-For using EMC with 1.14 see the [1.14 Readme](https://gitlab.com/EMC-Framework/EMC/blob/1.14/README.md)
+For using EMC with 1.13.2 see the [1.13.2 Readme](https://gitlab.com/EMC-Framework/EMC/blob/1.13.2/README.md)
 
 Making client mods with EMC 
 -------------------

@@ -1,8 +1,8 @@
 package me.deftware.mixin.mixins;
 
 import me.deftware.client.framework.event.events.EventServerPinged;
-import net.minecraft.client.gui.ServerListEntryNormal;
-import net.minecraft.client.multiplayer.ServerData;
+import net.minecraft.client.gui.menu.MultiplayerServerListWidget;
+import net.minecraft.client.options.ServerEntry;
 import org.spongepowered.asm.mixin.Final;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.Shadow;
@@ -10,28 +10,29 @@ import org.spongepowered.asm.mixin.injection.At;
 import org.spongepowered.asm.mixin.injection.Inject;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 
-@Mixin(ServerListEntryNormal.class)
+@Mixin(MultiplayerServerListWidget.ServerItem.class)
 public class MixinServerListEntryNormal {
 
-	private boolean sentEvent = false;
+    private boolean sentEvent = false;
 
-	@Final
-	@Shadow
-	private ServerData server;
+    @Final
+    @Shadow
+    private ServerEntry server;
 
-	@Inject(method = "drawEntry", at = @At("HEAD"))
-	private void drawEntry(int p_194999_1_, int p_194999_2_, int p_194999_3_, int p_194999_4_, boolean p_194999_5_, float p_194999_6_, CallbackInfo ci) {
-		if (server.pingToServer > 1 && !sentEvent) {
-			sentEvent = true;
-			EventServerPinged event = new EventServerPinged(server.serverMOTD, server.playerList,
-					server.gameVersion, server.populationInfo, server.version, server.pingToServer).send();
-			server.serverMOTD = event.getServerMOTD();
-			server.playerList = event.getPlayerList();
-			server.gameVersion = event.getGameVersion();
-			server.populationInfo = event.getPopulationInfo();
-			server.version = event.getVersion();
-			server.pingToServer = event.getPingToServer();
-		}
-	}
+    @Inject(method = "render", at = @At("HEAD"), remap = false)
+    public void render(int int_1, int int_2, int int_3, int int_4, int int_5, int int_6, int int_7, boolean boolean_1, float float_1, CallbackInfo ci) {
+        if (server.ping > 1 && !sentEvent) {
+            sentEvent = true;
+            EventServerPinged event = new EventServerPinged(server.label, server.playerListSummary,
+                    server.version, server.playerCountLabel, server.protocolVersion, server.ping);
+            event.broadcast();
+            server.label = event.getServerMOTD();
+            server.playerListSummary = event.getPlayerList();
+            server.version = event.getGameVersion();
+            server.playerCountLabel = event.getPopulationInfo();
+            server.protocolVersion = event.getVersion();
+            server.ping = event.getPingToServer();
+        }
+    }
 
 }

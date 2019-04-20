@@ -1,57 +1,74 @@
 package me.deftware.client.framework.wrappers.gui;
 
-import net.minecraft.client.Minecraft;
-import net.minecraft.client.gui.GuiSlot;
-import org.lwjgl.glfw.GLFW;
+import net.minecraft.client.MinecraftClient;
+import net.minecraft.client.gui.widget.ItemListWidget;
 
-public abstract class IGuiSlot extends GuiSlot implements CustomIGuiEventListener {
+@SuppressWarnings("all")
+public abstract class IGuiSlot extends ItemListWidget implements CustomIGuiEventListener {
 
-	private int selectedSlot;
+    public IGuiSlot(int width, int height, int topIn, int bottomIn, int slotHeightIn) {
+        super(MinecraftClient.getInstance(), width, height, topIn, bottomIn, slotHeightIn);
+    }
 
-	public IGuiSlot(int width, int height, int topIn, int bottomIn, int slotHeightIn) {
-		super(Minecraft.getInstance(), width, height, topIn, bottomIn, slotHeightIn);
-	}
+    @Override
+    public void render(int int_1, int int_2, float float_1) {
+        super.render(int_1, int_2, float_1);
+        if (children().size() != getISize()) {
+            buildItems();
+        }
+    }
 
-	@Override
-	protected int getSize() {
-		return getISize();
-	}
+    public int getSelectedSlot() {
+        if (getSelectedItem() == null) {
+            return -1;
+        }
+        return ((CustomItem) getSelectedItem()).id;
+    }
 
-	@Override
-	protected boolean mouseClicked(int index, int p_195078_2_, double p_195078_3_, double p_195078_5_) {
-		selectedSlot = index;
-		return true;
-	}
+    public void doDraw(int mouseX, int mouseY, float partialTicks) {
+        render(mouseX, mouseY, partialTicks);
+    }
 
-	@Override
-	protected boolean isSelected(int slotIndex) {
-		return selectedSlot == slotIndex;
-	}
+    public void clickElement(int slotIndex, boolean isDoubleClick, int mouseX, int mouseY) {
+        if (children().size() + 1 > slotIndex && slotIndex >= 0) {
+            selectItem((Item) children().get(slotIndex));
+        }
+    }
 
-	@Override
-	protected void drawBackground() {
+    public void buildItems() {
+        children().clear();
+        for (int i = 0; i < getISize(); i++) {
+            addItem(new CustomItem(i) {
+                @Override
+                public void render(int x, int y, int io, int i3, int i4, int i5, int i6, boolean b, float v) {
+                    drawISlot(id, (IGuiSlot.this.width / 2) - 105, y);
+                }
 
-	}
+                @Override
+                public boolean mouseClicked(double double_1, double double_2, int int_1) {
+                    if (int_1 == 0) {
+                        IGuiSlot.this.selectItem(this);
+                        return true;
+                    } else {
+                        return false;
+                    }
+                }
+            });
+        }
+    }
 
-	@Override
-	protected void drawSlot(int slotIndex, int xPos, int yPos, int heightIn, int mouseXIn, int mouseYIn, float partialTicks) {
-		drawISlot(slotIndex, xPos, yPos);
-	}
+    public abstract class CustomItem extends Item {
 
-	protected abstract int getISize();
+        protected int id;
 
-	protected abstract void drawISlot(int id, int x, int y);
+        public CustomItem(int id) {
+            this.id = id;
+        }
 
-	public int getSelectedSlot() {
-		return selectedSlot;
-	}
+    }
 
-	public void doDraw(int mouseX, int mouseY, float partialTicks) {
-		drawScreen(mouseX, mouseY, partialTicks);
-	}
+    protected abstract int getISize();
 
-	public void clickElement(int slotIndex, boolean isDoubleClick, int mouseX, int mouseY) {
-		mouseClicked(slotIndex, GLFW.GLFW_MOUSE_BUTTON_LEFT, mouseX, mouseY);
-	}
+    protected abstract void drawISlot(int id, int x, int y);
 
 }

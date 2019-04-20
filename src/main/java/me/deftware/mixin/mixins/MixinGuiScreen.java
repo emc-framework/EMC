@@ -6,14 +6,14 @@ import me.deftware.client.framework.event.events.EventGuiScreenDraw;
 import me.deftware.client.framework.event.events.EventGuiScreenPostDraw;
 import me.deftware.client.framework.wrappers.item.IItem;
 import me.deftware.mixin.imp.IMixinGuiScreen;
-import net.minecraft.client.Minecraft;
-import net.minecraft.client.gui.FontRenderer;
-import net.minecraft.client.gui.GuiButton;
-import net.minecraft.client.gui.GuiScreen;
-import net.minecraft.client.gui.IGuiEventListener;
-import net.minecraft.client.util.ITooltipFlag;
+import net.minecraft.client.MinecraftClient;
+import net.minecraft.client.font.TextRenderer;
+import net.minecraft.client.gui.Element;
+import net.minecraft.client.gui.Screen;
+import net.minecraft.client.gui.widget.AbstractButtonWidget;
+import net.minecraft.client.item.TooltipContext;
 import net.minecraft.item.ItemStack;
-import net.minecraft.util.text.ITextComponent;
+import net.minecraft.text.TextComponent;
 import org.spongepowered.asm.mixin.Final;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.Overwrite;
@@ -25,53 +25,69 @@ import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 import java.util.Iterator;
 import java.util.List;
 
-@Mixin(GuiScreen.class)
+@Mixin(Screen.class)
 public class MixinGuiScreen implements IMixinGuiScreen {
 
-    @Shadow
-    protected FontRenderer fontRenderer;
-    @Shadow
-    private List<GuiButton> buttons;
-    @Shadow
+    public boolean shouldSendPostRenderEvent = true;
+
+    @Shadow(remap = false)
+    protected TextRenderer font;
+
+    @Shadow(remap = false)
     @Final
-    private List<IGuiEventListener> children;
+    private List<AbstractButtonWidget> buttons;
+
+    @Shadow(remap = false)
+    @Final
+    private List<Element> children;
 
     @Override
-    public List<GuiButton> getButtonList() {
+    public List<AbstractButtonWidget> getButtonList() {
         return buttons;
     }
 
     @Override
-    public FontRenderer getFontRenderer() {
-        return fontRenderer;
+    public TextRenderer getFont() {
+        return font;
     }
 
     @Override
-    public List<IGuiEventListener> getEventList() {
+    public List<Element> getEventList() {
         return children;
     }
 
-    @Inject(method = "render", at = @At("HEAD"))
+    @Inject(method = "render", at = @At("HEAD"), remap = false)
     public void render(int x, int y, float p_render_3_, CallbackInfo ci) {
-        new EventGuiScreenDraw((GuiScreen) (Object) this, x, y).send();
+        new EventGuiScreenDraw((Screen) (Object) this, x, y).broadcast();
     }
 
-    @Inject(method = "render", at = @At("RETURN"))
+    @Inject(method = "render", at = @At("RETURN"), remap = false)
     public void render_return(int x, int y, float p_render_3_, CallbackInfo ci) {
-        new EventGuiScreenPostDraw((GuiScreen) (Object) this, x, y).send();
+        if (shouldSendPostRenderEvent) {
+            new EventGuiScreenPostDraw((Screen) (Object) this, x, y).broadcast();
+        }
     }
 
-    @Overwrite
-    public List<String> getItemToolTip(ItemStack p_getItemToolTip_1_) {
-        List<ITextComponent> lvt_2_1_ = p_getItemToolTip_1_.getTooltip(Minecraft.getInstance().player, Minecraft.getInstance().gameSettings.advancedItemTooltips ? ITooltipFlag.TooltipFlags.ADVANCED : ITooltipFlag.TooltipFlags.NORMAL);
-        List<String> lvt_3_1_ = Lists.newArrayList();
-        Iterator var4 = lvt_2_1_.iterator();
+    @Overwrite(remap = false)
+    public List<String> getTooltipFromItem(ItemStack itemStack_1) {
+        List<TextComponent> list_1 = itemStack_1.getTooltipText(MinecraftClient.getInstance().player, MinecraftClient.getInstance().options.advancedItemTooltips ? TooltipContext.Default.ADVANCED : TooltipContext.Default.NORMAL);
+        List<String> list_2 = Lists.newArrayList();
+        Iterator var4 = list_1.iterator();
+
         while (var4.hasNext()) {
-            ITextComponent lvt_5_1_ = (ITextComponent) var4.next();
-            lvt_3_1_.add(lvt_5_1_.getFormattedText());
+            TextComponent textComponent_1 = (TextComponent) var4.next();
+            list_2.add(textComponent_1.getFormattedText());
         }
-        EventGetItemToolTip event = new EventGetItemToolTip(lvt_3_1_, new IItem(p_getItemToolTip_1_.getItem())).send();
+
+        EventGetItemToolTip event = new EventGetItemToolTip(list_2, new IItem(itemStack_1.getItem()));
+        event.broadcast();
         return event.getList();
+
+    }
+
+    public boolean mouseReleased(double x, double y, int button) {
+        children.forEach((listener) -> listener.mouseReleased(x, y, button));
+        return false;
     }
 
 }

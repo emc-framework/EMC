@@ -1,30 +1,30 @@
 package me.deftware.mixin.imp;
 
-import net.minecraft.client.MainWindow;
-import net.minecraft.client.gui.GuiScreen;
-import net.minecraft.util.Session;
-import net.minecraft.util.Timer;
-
-import javax.annotation.Nullable;
+import net.minecraft.client.gui.Screen;
+import net.minecraft.client.render.RenderTickCounter;
+import net.minecraft.client.util.Session;
+import net.minecraft.client.util.Window;
 
 public interface IMixinMinecraft {
 
-	Session getSession();
+    Session getSession();
 
-	void setSession(Session session);
+    void setSession(Session session);
 
-	Timer getTimer();
+    RenderTickCounter getTimer();
 
-	MainWindow getMainWindow();
+    Window getMainWindow();
 
-	void displayGuiScreen(@Nullable GuiScreen guiScreenIn);
+    void displayGuiScreen(Screen guiScreenIn);
 
-	void doRightClickMouse();
+    void doRightClickMouse();
 
-	void doClickMouse();
+    void doClickMouse();
 
-	void doMiddleClickMouse();
+    void doMiddleClickMouse();
 
-	void setRightClickDelayTimer(int delay);
+    void setRightClickDelayTimer(int delay);
+
+    boolean getIsWindowFocused();
 
 }
